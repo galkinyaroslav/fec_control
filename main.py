@@ -1,4 +1,5 @@
 import enum
+import json
 import os
 import sys
 import telnetlib
@@ -29,7 +30,6 @@ def ttok(command: str, printing: bool = True) -> bytes:
     result = transaction(f'ttok ;{command};', printing=printing)
     if printing:
         print(f'==> ttok ;{command}; done\n')
-    # print(f'{result}')
     return result
 
 
@@ -40,97 +40,59 @@ def transaction(command: str = '2', printing: bool = True) -> bytes:
     tln.write(f'{command}\r\n'.encode('utf-8'))
     # write_stop = perf_counter()
     # print(f'write_time={write_stop - write_start}')
-    # result = bytes()
     # read_start = perf_counter()
     received_data: bytes = tln.read_until(b'\r\n')
     # read_stop = perf_counter()
     # print(f'read_time={read_stop - read_start}')
-    # if len(received_data) > 0:
-    #     result += received_data
     if printing:
         print('Receive >>' + received_data.decode().strip())  # if len(oo)>0:print len(oo),"<",oo,">",
     return received_data
 
 
-# def ini(link=1, fini=None):
-#     power_on(link)
-#     if not fini:
-#         ttok('wsa 13 30 %d' % link)
-#         ttok('wsa 77 30 %d' % link)  # VACFG
-#         ttok('wsa 7 30 %d' % link)
-#         ttok('wsa 8 0 %d' % link)  # TWLen.0
-#         ttok('wsa 71 30 %d' % link)
-#         ttok('wsa 72 0 %d' % link)  # TWLen.1
-#         ttok('wsa 9 0 %d' % link)
-#         ttok('wsa 10 0 %d' % link)
-#         ttok('wsa 73 0 %d' % link)
-#         ttok('wsa 74 0 %d' % link)  # AQStart
-#         ttok('wsa 11 30 %d' % link)
-#         ttok('wsa 12 0 %d' % link)
-#         ttok('wsa 75 30 %d' % link)
-#         ttok('wsa 76 0 %d' % link)  # AQStop
-#
-#         # w('rsa 7')
-#         ttok('wxv 0x944 0x6600 %d' % link)  # # wxv   0x944 0x6600 0;
-#
-#         ttok('kmsffw 0x0 %d' % link)
-#         ttok('kmslkw 0xff %d' % link)  # set k 0;kmsffw 0x0 $k; kmslkw 0x0 $k;
-#         ttok('getsetpll %d' % link)
-#         return
-#
-# if fini == 'ini.txt':
-#     print
-#     " Load from file ..."
-#     scri = oscmd("cat ini.txt");
-#     lscri = scri.splitlines();
-#     for l in lscri:  # цикл по строкам скрипта
-#         if l[0] == '#': continue
-#         print
-#         l[0:len(l) - 2]
-#         ttok(l);  # w(';'+l+'\n');
-#     # print l
-# # print scri
-
-
-def power_on(link: int = 0):
-    powst: bytes = ttok(f'rxv 0x904 {link}').split()[1]
+def power_on(link: int = 0) -> None:
+    powst_full: bytes = ttok(f'rxv 0x904 {link}')
+    powst = powst_full.split()[1]
     if powst == b'0x40000003':
         color_print(f'===> SAMPAS power status was = {powst.decode()}', background='b')
         # print 'SAMPAS power status was = %s'%powst;
         print('')
-        return
-    if powst == b'0x40000001' or powst == b'0x40000002':
-        ttok('wxv 0x904 0x3 %d' % link)
+    elif powst == b'0x40000001' or powst == b'0x40000002':
+        ttok(f'wxv 0x904 0x1 {link};wxv 0x904 0x3 {link}')
         color_print(f'===> New SAMPAS power status = {powst.decode()}', background='y')
-        return
-    ttok(f'wxv 0x904 0x1 {link}')
-    ttok(f'wxv 0x904 0x3 {link}')
-    color_print(f'===> New SAMPAS power status = {powst.decode()}', background='g')
+    elif powst == b'0x40000000':
+        ttok(f'wxv 0x904 0x1 {link};wxv 0x904 0x3 {link}')
+        # ttok(f'wxv 0x904 0x3 {link}')
+
+        color_print(f'===> New SAMPAS power status = {powst.decode()}', background='g')
+    else:
+        color_print(f'===> SOME ERROR {powst_full.decode()}', background='r')
 
 
 def ini(link=1, fini=''):
+    ttok(f'car {link}')
     power_on(link=link)
     if fini == '':
-        ttok(f'wsa 13 30 {link}')
-        ttok(f'wsa 77 30 {link}')  # VACFG
-        ttok(f'wsa 7 30 {link}')
-        ttok(f'wsa 8 0 {link}')  # TWLen.0
-        ttok(f'wsa 71 30 {link}')
-        ttok(f'wsa 72 0 {link}')  # TWLen.1
-        ttok(f'wsa 9 0 {link}')
-        ttok(f'wsa 10 0 {link}')
-        ttok(f'wsa 73 0 {link}')
-        ttok(f'wsa 74 0 {link}')  # AQStart
-        ttok(f'wsa 11 30 {link}')
-        ttok(f'wsa 12 0 {link}')
-        ttok(f'wsa 75 30 {link}')
-        ttok(f'wsa 76 0 {link}')  # AQStop
-
-        # w('rsa 7');
-        ttok(f'wxv 0x944 0x6600 {link}')  # #  wxv   0x944 0x6600 0;
-        ttok(f'kmsffw 0x0 {link}')
-        ttok(f'kmslkw 0xff {link}')  # set k 0;kmsffw 0x0 $k; kmslkw 0x0 $k;
-        ttok(f'getsetpll {link}')
+        ttok(f'wsa 13 30 {link};'
+             f'wsa 77 30 {link};'  # VACFG
+             f'wsa 7 30 {link};'
+             f'wsa 8 0 {link};'  # TWLen.0
+             f'wsa 71 30 {link};'
+             f'wsa 72 0 {link};'  # TWLen.1
+             f'wsa 9 0 {link};'
+             f'wsa 10 0 {link};'
+             f'wsa 73 0 {link};'
+             f'wsa 74 0 {link};'  # AQStart
+             f'wsa 11 30 {link};'
+             f'wsa 12 0 {link};'
+             f'wsa 75 30 {link};'
+             f'wsa 76 0 {link};'  # AQStop
+             f'wxv 0x944 0x6600 {link};'  # #  wxv   0x944 0x6600 0;
+             f'kmsffw 0x0 {link};'
+             f'kmslkw 0xff {link};'  # set k 0;kmsffw 0x0 $k; kmslkw 0x0 $k;
+             f'getsetpll {link}')
+        # # TODO check setpll sp0 sp1:
+        # sh0, sh1 = get_card_pll(link)
+        # ttok(f'setpll {sh0} {sh1}')
         return
         #
     if fini == 'ini.txt':
@@ -161,11 +123,11 @@ def adcd(n=10, printing: bool = False):
     color_print(header)  # print hd
     for j in range(n):
         # if j / 20 * 20 == j:
-            # ifstop = oscmd('cat toConsole.txt');
-            # if ifstop=='stop\n':
-            #     print('stop detected')
-            #     break
-            # car=ttok('car?;',0);lcar=car.split(' '); print lcar[0]+lcar[1],;
+        # ifstop = oscmd('cat toConsole.txt');
+        # if ifstop=='stop\n':
+        #     print('stop detected')
+        #     break
+        # car=ttok('car?;',0);lcar=car.split(' '); print lcar[0]+lcar[1],;
         res = adc(printing=printing)
         ar = res.split(b',')
         if len(ar) < 16:
@@ -201,103 +163,146 @@ def adcd(n=10, printing: bool = False):
         # oscmd('sleep 0.1');
 
 
-def filn():
-    return 44
-    # return oscmd('cat filenum.txt')
+def get_file_number(card_number: int) -> int:
+    path = f'./runs/{card_number}/'
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return len(os.listdir(path)) + 1
 
 
-def carn():
-    return 33
-    # return oscmd('cat cardname.txt');
+def get_card_number(link: int) -> int:
+    with open('roc_link_map.json', 'r') as f:
+        link = str(link)
+        data = json.load(f)
+        return data[link]['card']
+
+
+def get_card_pll(link: int) -> tuple:
+    link = str(link)
+    with open('roc_link_map.json', 'r') as f:
+        data = json.load(f)
+        return data[link]['sh0'], data[link]['sh1']
+
 
 class SampaNumber(enum.Enum):
     ZERO: int = 0
     FIRST: int = 1
 
 
-# def wr(sampa_number: SampaNumber = SampaNumber.ZERO.value):
-#     tln.write(f'ttok ;getdd {sampa_number.value}\r\n'.encode('utf-8'))
-#
-#
-# def ru(to=105):
-#     result = tln.read_until(b'5555aaaa', to)
-#     return result
-
-
-# def carfil(cn='',fn=0):
-#     global carN
-#     global filN
-#     if cn=='' and fn==0:
-#         carN='286';oscmd('echo '+carN+'>cardname.txt')
-#         fn=1;oscmd('echo '+'\"'+"%d"%fn+'\"'  + '>filenum.txt')
-#     return carN,filN
-
-
-def getffw(runs_number=1):
-    file_number = int(filn())+1
-    # ddmon = 'home/serg/pyt/tmp'
+def getffw(link: int, runs_number: int = 1):
+    # ttok(f'car {link}')
+    card_number = get_card_number(link)
+    file_number = int(get_file_number(card_number))
+    file_mane = f'{file_number}-{card_number}.txt'
     print(f'Initiated run')
-    print(f'File name of run {file_number}')
-    # oscmd('echo 00 >/home/serg/pyt/tmp/everdy.txt');
-    # x = oscmd('cat /home/serg/pyt/tmp/everdy.txt');
-    # print ' See /home/serg/tmp/everdy.txt :<%s> '%x;
+    print(f'Card number: {card_number}, file name: {file_mane}, run: {file_number}')
     with open('events.lst', 'w') as events_file:
-        # oscmd('echo ".">toConsole.txt')
         for run in range(runs_number):
-            # oscmd('echo 00 >/home/serg/pyt/tmp/everdy.txt')
-            # receive_tth = ttok("tth 1", printing=False)
-            # print(f'Run #{run+1}, TTH>>{receive_tth.decode()}')
-            received_data = ttok(f'tth 1;getdd {SampaNumber.ZERO.value};getdd {SampaNumber.FIRST.value}', False).split(b',')
-            print(f'Run #{run+1}, TTH>>{received_data[-3].decode()}')
-            # result_list: list = [b'0x' + word for word in received_data[1:-34]]
-            # result_string = b' '.join(result_list) + b'\n'
-            # fo.write(result_string.decode())
+            received_data = ttok(f'car {link};'
+                                 f'tth 1;'
+                                 f'getdd {SampaNumber.ZERO.value};'
+                                 f'getdd {SampaNumber.FIRST.value}', False).split(b',')
+            # print(f'{received_data=}')
+            print(f'Run #{run + 1}, TTH>>{received_data[-3].decode()}\n')
             events_file.write((b' '.join(b'0x' + word for word in received_data[1:-34]) + b'\n').decode())
-    fn = f'{int(carn())}-{file_number}.txt'
-    oscmd(f'cp events.lst ./{fn}')  ### runs
-        # oscmd('cp events.lst ./runs/%s' % fn)  ### runs
-        #x = oscmd('cat /home/serg/pyt/tmp/everdy.txt');
-        #print ' See /home/serg/tmp/everdy.txt :<%s> '%x;
-        #oscmd('cp events.lst /tmp/event.txt');
-        #oscmd('echo 0%d>/tmp/everdy.txt'%n);
-
+    oscmd(f'cp events.lst ./runs/{card_number}/{file_mane}')  # runs
     return
 
 
-main_start = perf_counter()
+def get_trstat(link: int) -> dict:
+    fec_trstats = {}
+    ttok(f'car {link}')
+    trstat_data = ttok(f'trstat {link}').split(b'  ')
+    try:
+        cid = trstat_data[2].decode().split(' ')[1]
+        print(trstat_data)
+        integrator = 3
+        while integrator != 0:
+            if cid == '0x00000000':
+                trstat_data = ttok(f'trstat {link}').split(b'  ')
+                cid = trstat_data[2].decode().split(' ')[1]
+                integrator -= 1
+            else:
+                integrator = 0
+        fec_trstats.update({
+            'stat': trstat_data[0].decode().split(' ')[1],
+            'car': int(trstat_data[1].decode().split(' ')[1]),
+            'cid': cid,
+            'rid': trstat_data[3].decode().split(' ')[1],
+            'mask': trstat_data[4].decode().split(' ')[2],
+            'card': int(trstat_data[6].decode().split(' ')[1]),
+            'sh0': int(trstat_data[7].decode().split(' = ')[1]),
+            'sh1': int(trstat_data[8].decode().split(' ')[0])
+        })
+    except Exception as e:
+        print(e)
 
-host = '192.168.1.235'
-port = 30
-tln = telnetlib.Telnet()
-tln.open(host=host, port=port)
-op1_start = perf_counter()
-out = tln.read_until('return:\n\r'.encode('utf-8'))
-op1_stop = perf_counter()
-print(f'{op1_stop-op1_start=}')
-print(out.decode('utf-8'))
-
-# for link in range(3):
-#     ttok(f'car {link}')
-#     ttok('trstat')
-#     ttok('tth 1')
-#     ini(link=link)
-#     ttok('tth 1')
-#     adcd(5)
-
-# sleep(2)
-link_n = 1
-ttok(';')
-ttok(f'car {link_n}')
-# ini(link=link_n)
-# ttok(f'tth 1')
-# adcd(2)
-getffw(3)
+    with open('current_fec_trstats.json', 'w') as f:
+        json.dump(fec_trstats, f)
+    return fec_trstats
 
 
-# ttok()
+def get_trstat_all() -> dict:
+    roc_link_map = {}
+    for link in range(31):
+        roc_link_map.update({link: get_trstat(link)})
+    with open('roc_link_map.json', 'w') as f:
+        json.dump(roc_link_map, f)
+    return roc_link_map
 
-tln.write('!\r\n'.encode('utf-8'))
-tln.close()
-main_stop = perf_counter()
-print(f'main={main_stop-main_start}')
+
+def get_tth_all() -> None:
+    for i in range(31):
+        ttok(f'car {i};ttok ;tth 2')
+
+
+def get_tts_tth_all() -> None:
+    for i in range(31):
+        ttok(f'car {i};tts 2;tth 2')
+
+
+def ini_all() -> None:
+    for link in range(31):
+        ini(link)
+
+
+def getffw_all(runs_number: int = 1) -> None:
+    for link in range(31):
+        getffw(link=link, runs_number=runs_number)
+
+
+def power_off_all() -> None:
+    for link in range(31):
+        power_off(link)
+
+
+def power_off(link: int) -> None:
+    ttok(f'car {link};wxv 0x904 0x0 {link}')
+
+
+def power_on_all() -> None:
+    for link in range(31):
+        ttok(f'car {link}')
+        power_on(link=link)
+
+
+if __name__ == "__main__":
+    main_start = perf_counter()
+    host = '192.168.1.235'
+    port = 30
+    tln = telnetlib.Telnet()
+    tln.open(host=host, port=port)
+    out = tln.read_until('return:\n\r'.encode('utf-8'))
+    print(out.decode('utf-8'))
+
+    try:
+        # ini_all()
+        getffw_all(runs_number=10)
+    except Exception as e:
+        print(e)
+    finally:
+        tln.write('!\r\n'.encode('utf-8'))
+        tln.close()
+        main_stop = perf_counter()
+        print(f'main_time={main_stop - main_start}')
 
