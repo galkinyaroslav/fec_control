@@ -163,18 +163,33 @@ def adcd(n=10, printing: bool = False):
         # oscmd('sleep 0.1');
 
 
-def get_file_number(card_number: int) -> int:
-    path = f'./runs/{card_number}/'
+class TestsName(enum.Enum):
+    CROSSTALK: str = 'crosstalk'
+    ENC: str = 'enc'
+    GAIN: str = 'gain'
+    PLL: str = 'pll'
+    RAW: str = 'raw'
+    RMS_PEDESTAL: str = 'rms_pedestal'
+    WORKED_CHANNEL: str = 'worked_channel'
+
+
+def get_file_number(card_number: int, test_name: TestsName = TestsName.RAW) -> int:
+    path = f'./runs/{card_number}/{test_name.value}/'
     if not os.path.exists(path):
         os.makedirs(path)
     return len(os.listdir(path)) + 1
 
 
-def get_card_number(link: int) -> int:
-    with open('roc_link_map.json', 'r') as f:
-        link = str(link)
-        data = json.load(f)
-        return data[link]['card']
+def get_card_number(link: int = 0, single: bool = False) -> int:
+    if single:
+        with open('current_fec_trstats.json', 'r') as f:
+            data = json.load(f)
+            return data['card']
+    else:
+        with open('roc_link_map.json', 'r') as f:
+            link = str(link)
+            data = json.load(f)
+            return data[link]['card']
 
 
 def get_card_pll(link: int) -> tuple:
@@ -192,7 +207,7 @@ class SampaNumber(enum.Enum):
 def getffw(link: int, runs_number: int = 1):
     # ttok(f'car {link}')
     card_number = get_card_number(link)
-    file_number = int(get_file_number(card_number))
+    file_number = int(get_file_number(card_number))  # TODO придумать как передавать имя теста
     file_mane = f'{file_number}-{card_number}.txt'
     print(f'Initiated run')
     print(f'Card number: {card_number}, file name: {file_mane}, run: {file_number}')
@@ -297,7 +312,9 @@ if __name__ == "__main__":
 
     try:
         # ini_all()
-        getffw_all(runs_number=10)
+        # getffw_all(runs_number=10)
+        print(get_card_number(single=True))
+        print(get_file_number())
     except Exception as e:
         print(e)
     finally:
