@@ -157,7 +157,7 @@ def get_file_number(card_number: int, test_name: TestsName = TestsName.RAW) -> i
     return len(os.listdir(path)) + 1
 
 
-def get_card_number(link: int = 0, single: bool = False) -> int:
+def get_card_number(link: int = 0, single: bool = True) -> int:
     if single:
         with open('current_fec_trstats.json', 'r') as f:
             data = json.load(f)
@@ -169,11 +169,16 @@ def get_card_number(link: int = 0, single: bool = False) -> int:
             return data[link]['card']
 
 
-def get_card_pll(link: int) -> tuple:
+def get_card_pll(link: int, single: bool = True) -> tuple:
     link = str(link)
-    with open('roc_link_map.json', 'r') as f:
-        data = json.load(f)
-        return data[link]['sh0'], data[link]['sh1']
+    if single:
+        with open('current_fec_trstats.json', 'r') as f:
+            data = json.load(f)
+            return data['sh0'], data['sh1']
+    else:
+        with open('roc_link_map.json', 'r') as f:
+            data = json.load(f)
+            return data[link]['sh0'], data[link]['sh1']
 
 
 class SampaNumber(enum.Enum):
@@ -183,7 +188,7 @@ class SampaNumber(enum.Enum):
 
 def getffw(link: int, runs_number: int = 1):
     # ttok(f'car {link}')
-    card_number = get_card_number(link=link, single=True)
+    card_number = get_card_number(link=link)
     file_number = int(get_file_number(card_number))  # TODO придумать как передавать имя теста 1
     file_mane = f'{file_number}-{card_number}.txt'
     print(f'Initiated run')
@@ -279,6 +284,33 @@ def power_on_all() -> None:
         power_on(link=link)
 
 
+def scan_card_pll(link: int = 0, runs: int = 1) -> dict:
+    ttok(f'car {link}')
+    get_trstat(link)
+    card_number = get_card_number(link)
+    file_number = get_file_number(card_number=card_number, test_name=TestsName.PLL)
+    for i in range(runs):
+        with (open(f'{file_number}-{card_number}.pll', 'a') as pf):
+            ttok(f'car {link}')
+            pll = ttok('scpll0; scpll1').replace(b',', b'').split(b' ')
+            pll_dict = dict()
+            pll_dict['sh0'] = bin(int(pll[3], 16))
+            pll_dict['sh1'] = bin(int(pll[7], 16))
+            pf.write(str(pll_dict)+'\n')
+            print(pll_dict)
+    return pll_dict
+
+
+def set_card_pll(link: int = 0, sh0: int = 0, sh1: int = 0) -> bool:
+    ttok(f'car {link};setpll {sh0} {sh1}')
+    response = ttok(f'car {link};tts 2; tth 2').split(b' ')  # TODO return?
+    print(int(response[9]), int(response[18]))
+    if int(response[9]) | int(response[18]) <= 1:
+        return True
+    else:
+        return False
+
+
 if __name__ == "__main__":
     main_start = perf_counter()
     host = '192.168.1.235'
@@ -291,11 +323,17 @@ if __name__ == "__main__":
     try:
         # get_trstat(link=31)
         # ini(link=31)
+        # ttok(f'car 31;setpll 6 7')
         # ttok(f'car 31;tts 11; tth 111')
         # adcd(link=31, n=3, printing=False)
-        getffw(link=31, runs_number=1)
+        # getffw(link=31, runs_number=100)
+        # scan_card_pll(link=31)
+        print(set_card_pll(link=31, sh0=0, sh1=0))
+        print(set_card_pll(link=31, sh0=6, sh1=7))
+
         # print(get_card_number(single=True))
         # print(get_file_number())
+
     except Exception as e:
         print(e)
         print(traceback.format_exc())
