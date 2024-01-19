@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import telnetlib
+import traceback
 from time import perf_counter
 
 
@@ -46,7 +47,7 @@ def transaction(command: str = '2', printing: bool = True) -> bytes:
     # print(f'read_time={read_stop - read_start}')
     if printing:
         print('Receive >>' + received_data.decode().strip())  # if len(oo)>0:print len(oo),"<",oo,">",
-    return received_data
+    return received_data.strip()
 
 
 def power_on(link: int = 0) -> None:
@@ -108,59 +109,35 @@ def ini(link=1, fini=''):
         # print scri
 
 
-def adc(printing: bool = True):
-    result = ttok('adc', printing=printing)
+def adc(link: int = 0, printing: bool = True):
+    result = ttok(f'car {link};adc', printing=printing)
     return result
 
 
-def adcd(n=10, printing: bool = False):
+def adcd(link: int = 0, n: int = 10, printing: bool = False):
     # oscmd('echo ".">toConsole.txt');
     #       0       1     2       3      4      5      6      7      8     9      10     11     12     13     14     15
     #    |......|......|......|......|......|......|......|......|......|......|......|......|......|......|......|......|......|
     header = "\n    |  T    1.7Vi  1.1Vc5 1.25Vd mA2 S0 mA1 S0 1.1Vr  1.25Va mA0 S0  Tsam  1.25Va mA3 S1 1.1Vr  mA4 S1 mA5 S1 1.25Va \n"
-    global T, Ts
-    # oscmd("echo "+ '\"' + "%s"%hd[8:] + '\"' + ">VAT.txt");
     color_print(header)  # print hd
     for j in range(n):
-        # if j / 20 * 20 == j:
-        # ifstop = oscmd('cat toConsole.txt');
-        # if ifstop=='stop\n':
-        #     print('stop detected')
-        #     break
-        # car=ttok('car?;',0);lcar=car.split(' '); print lcar[0]+lcar[1],;
-        res = adc(printing=printing)
-        ar = res.split(b',')
-        if len(ar) < 16:
-            print("Wrong length %d" % len(ar))
-            break
+        res = adc(link=link, printing=printing)
+        arow = res.replace(b',', b'').split(b' ')
+        ar = [int(a, 16)*0.61 for a in arow[2:]]
         if 0 == 0:
-            r = 0.61 * int(ar[0], 16)
+            r = ar[0]
             a = -1.064200E-09
             b = -5.759725E-06
             c = -1.789883E-01
-            d = 2.048570E+02  # set v int*0.61;
-            rs = 0.61 * int(ar[9], 16)
-            T = a * r ** 3 + b * r ** 2 + c * r + d
-            sT = "%2.1f" % T
-            Ts = a * rs ** 3 + b * rs ** 2 + c * rs + d
-            sTs = "%2.1f" % Ts
-            v1 = 0.61 * int(ar[1], 16)
-            sv1 = "%2.1f" % v1
-            vn = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-            svn = vn
-            for k in [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15]:
-                vn[k] = 0.61 * int(ar[k], 16)
-                svn[k] = "%2.1f" % vn[k]
-            #            0    1  2  3   4  5  6  7  8    9
-
+            d = 2.048570E+02
+            rs = ar[9]
+            ar[0] = a * r ** 3 + b * r ** 2 + c * r + d
+            ar[9] = a * rs ** 3 + b * rs ** 2 + c * rs + d
+            svn = ['%2.1f' % val for val in ar]
             sout = '      %s  %s %s %s  %s  %s %s %s  %s  %s  %s %s  %s %s  %s  %s ' % \
-                   (sT, svn[1], svn[2], svn[3], svn[4], svn[5], svn[6], svn[7], svn[8], sTs, svn[10], svn[11], svn[12],
-                    svn[13], svn[14], svn[15])
+                   (svn[0], svn[1], svn[2], svn[3], svn[4], svn[5], svn[6], svn[7], svn[8], svn[9],
+                    svn[10], svn[11], svn[12], svn[13], svn[14], svn[15])
             print(sout)
-            # oscmd("echo " + '\"%s\"' % sout + ">>VAT.txt");
-        # print 's: ',res[0:len(res)-2];
-        #
-        # oscmd('sleep 0.1');
 
 
 class TestsName(enum.Enum):
@@ -206,7 +183,7 @@ class SampaNumber(enum.Enum):
 
 def getffw(link: int, runs_number: int = 1):
     # ttok(f'car {link}')
-    card_number = get_card_number(link)
+    card_number = get_card_number(link=link, single=True)
     file_number = int(get_file_number(card_number))  # TODO придумать как передавать имя теста 1
     file_mane = f'{file_number}-{card_number}.txt'
     print(f'Initiated run')
@@ -219,6 +196,7 @@ def getffw(link: int, runs_number: int = 1):
                                  f'getdd {SampaNumber.FIRST.value}', False).split(b',')
             # print(f'{received_data=}')
             print(f'Run #{run + 1}, TTH>>{received_data[-3].decode()}\n')
+            print(received_data[1:-34])
             events_file.write((b' '.join(b'0x' + word for word in received_data[1:-34]) + b'\n').decode())
     oscmd(f'cp events.lst ./runs/{card_number}/{TestsName.RAW.value}/{file_mane}')  # TODO придумать как передавать имя теста 2
     return
@@ -311,12 +289,17 @@ if __name__ == "__main__":
     print(out.decode('utf-8'))
 
     try:
-        # ini_all()
-        getffw_all(runs_number=10)
+        # get_trstat(link=31)
+        # ini(link=31)
+        # ttok(f'car 31;tts 11; tth 111')
+        # adcd(link=31, n=3, printing=False)
+        getffw(link=31, runs_number=1)
         # print(get_card_number(single=True))
         # print(get_file_number())
     except Exception as e:
         print(e)
+        print(traceback.format_exc())
+
     finally:
         tln.write('!\r\n'.encode('utf-8'))
         tln.close()
