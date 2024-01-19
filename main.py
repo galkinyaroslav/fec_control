@@ -207,7 +207,7 @@ class SampaNumber(enum.Enum):
 def getffw(link: int, runs_number: int = 1):
     # ttok(f'car {link}')
     card_number = get_card_number(link)
-    file_number = int(get_file_number(card_number))  # TODO придумать как передавать имя теста
+    file_number = int(get_file_number(card_number))  # TODO придумать как передавать имя теста 1
     file_mane = f'{file_number}-{card_number}.txt'
     print(f'Initiated run')
     print(f'Card number: {card_number}, file name: {file_mane}, run: {file_number}')
@@ -220,7 +220,7 @@ def getffw(link: int, runs_number: int = 1):
             # print(f'{received_data=}')
             print(f'Run #{run + 1}, TTH>>{received_data[-3].decode()}\n')
             events_file.write((b' '.join(b'0x' + word for word in received_data[1:-34]) + b'\n').decode())
-    oscmd(f'cp events.lst ./runs/{card_number}/{file_mane}')  # runs
+    oscmd(f'cp events.lst ./runs/{card_number}/{TestsName.RAW.value}/{file_mane}')  # TODO придумать как передавать имя теста 2
     return
 
 
@@ -312,9 +312,9 @@ if __name__ == "__main__":
 
     try:
         # ini_all()
-        # getffw_all(runs_number=10)
-        print(get_card_number(single=True))
-        print(get_file_number())
+        getffw_all(runs_number=10)
+        # print(get_card_number(single=True))
+        # print(get_file_number())
     except Exception as e:
         print(e)
     finally:
