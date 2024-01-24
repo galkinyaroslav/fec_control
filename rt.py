@@ -287,7 +287,7 @@ def getdd():
 		if len(oo)==0:break;
 	print "\n\n";print s;	
 	return
-def getff():
+def  getff():
 	wr(0);oo=ru(5);o1=oo.split(','); wr(1);oo=ru(5);o2=oo.split(',');
 	print o1;print o2;
 	'''

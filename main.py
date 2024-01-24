@@ -5,7 +5,7 @@ import sys
 import telnetlib
 import traceback
 from time import perf_counter
-
+from waveform import WaveForm
 
 def color_print(message: str, font: str = 'w', background: str = 'd'):
     '''
@@ -90,7 +90,8 @@ def ini(link=1, fini=''):
              f'wxv 0x944 0x6600 {link};'  # #  wxv   0x944 0x6600 0;
              f'kmsffw 0x0 {link};'
              f'kmslkw 0xff {link};'  # set k 0;kmsffw 0x0 $k; kmslkw 0x0 $k;
-             f'getsetpll {link}')
+             f'getsetpll {link};'
+             f'cff;')
         # # TODO check setpll sp0 sp1:
         # sh0, sh1 = get_card_pll(link)
         # ttok(f'setpll {sh0} {sh1}')
@@ -194,15 +195,21 @@ def getffw(link: int, runs_number: int = 1):
     print(f'Initiated run')
     print(f'Card number: {card_number}, file name: {file_mane}, run: {file_number}')
     with open('events.lst', 'w') as events_file:
-        for run in range(runs_number):
+        nrun = 1
+        while runs_number:
             received_data = ttok(f'car {link};'
                                  f'tth 1;'
                                  f'getdd {SampaNumber.ZERO.value};'
                                  f'getdd {SampaNumber.FIRST.value}', False).split(b',')
             # print(f'{received_data=}')
-            print(f'Run #{run + 1}, TTH>>{received_data[-3].decode()}\n')
-            print(received_data[1:-34])
-            events_file.write((b' '.join(b'0x' + word for word in received_data[1:-34]) + b'\n').decode())
+            print(f'Run #{nrun}, TTH>>{received_data[-3].decode()}\n')
+            wform = WaveForm(received_data[1:-34])
+            if not wform.check_data():
+                runs_number += 1
+            else:
+                events_file.write((b' '.join(b'0x' + word for word in received_data[1:-34]) + b'\n').decode())
+            runs_number -= 1
+            nrun += 1
     oscmd(f'cp events.lst ./runs/{card_number}/{TestsName.RAW.value}/{file_mane}')  # TODO придумать как передавать имя теста 2
     return
 
@@ -321,15 +328,13 @@ if __name__ == "__main__":
     print(out.decode('utf-8'))
 
     try:
-        # get_trstat(link=31)
-        # ini(link=31)
+        get_trstat(link=31)
+        ini(link=31)
         # ttok(f'car 31;setpll 6 7')
         # ttok(f'car 31;tts 11; tth 111')
-        # adcd(link=31, n=3, printing=False)
-        # getffw(link=31, runs_number=100)
+        # adcd(link=31, n=100, printing=False)
+        getffw(link=31, runs_number=100)
         # scan_card_pll(link=31)
-        print(set_card_pll(link=31, sh0=0, sh1=0))
-        print(set_card_pll(link=31, sh0=6, sh1=7))
 
         # print(get_card_number(single=True))
         # print(get_file_number())
