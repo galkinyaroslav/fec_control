@@ -5,7 +5,8 @@ import sys
 import telnetlib
 import traceback
 from time import perf_counter
-from waveform import WaveForm
+from waveform import NWaveForm
+
 
 def color_print(message: str, font: str = 'w', background: str = 'd'):
     '''
@@ -203,7 +204,7 @@ def getffw(link: int, runs_number: int = 1):
                                  f'getdd {SampaNumber.FIRST.value}', False).split(b',')
             # print(f'{received_data=}')
             print(f'Run #{nrun}, TTH>>{received_data[-3].decode()}\n')
-            wform = WaveForm(received_data[1:-34])
+            wform = NWaveForm(raw_data=received_data[1:-34])
             if not wform.check_data():
                 runs_number += 1
             else:
@@ -332,8 +333,8 @@ if __name__ == "__main__":
         ini(link=31)
         # ttok(f'car 31;setpll 6 7')
         # ttok(f'car 31;tts 11; tth 111')
-        # adcd(link=31, n=100, printing=False)
-        getffw(link=31, runs_number=100)
+        adcd(link=31, n=3, printing=False)
+        getffw(link=31, runs_number=1)
         # scan_card_pll(link=31)
 
         # print(get_card_number(single=True))
