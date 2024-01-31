@@ -15,9 +15,9 @@ class NWaveForm:
             self.__card_number = parameters_list[4]
             self.__test_name = parameters_list[2]
             self.__raw_data = self.get_raw_data()
-            self.__all_data = self.convert_data_to_int()
-            self.__waveform_data = self.__all_data[:, :, 5:]
-            self.__rms = self.get_rms()
+            # self.__all_data = self.convert_data_to_int()
+            # self.__waveform_data = self.__all_data[:, :, 5:]
+            # self.__rms = self.get_rms()
         if raw_data:
             # separators = r'[/.-]'
             self.__full_filename = None
@@ -27,12 +27,15 @@ class NWaveForm:
             self.__card_number = None
             self.__test_name = None
             self.__raw_data = np.array([[int(data, 16) for data in raw_data]],)
-            self.__all_data = self.convert_data_to_int()
-            self.__waveform_data = self.__all_data[:, :, 5:]
-            self.__rms = self.get_rms()
+        self.__all_data = self.convert_data_to_int()
+        self.__waveform_data = self.__all_data[:, :, 5:]
+        self.__rms = self.get_rms()
+        self.__max_value = self.get_max_value()
 
 
-
+    @property
+    def max_value(self):
+        return self.__max_value
     @property
     def all_data(self):
         return self.__all_data
@@ -99,6 +102,11 @@ class NWaveForm:
                     result_array_3d[i, j, 3 * k + 1] = d1
                     result_array_3d[i, j, 3 * k + 2] = d2
         return result_array_3d
+
+    def get_max_value(self):
+        self.__max_value = self.__waveform_data.max(axis=(0, 2))
+        return self.__max_value
+
 
     def plot_waveform(self):
         px = 1 / plt.rcParams['figure.dpi']  # pixel in inches
@@ -213,7 +221,7 @@ class NWaveForm:
 if __name__ == '__main__':
     np.set_printoptions(linewidth=1000, threshold=np.inf)
 
-    filename = 'runs/454/raw/80-454.txt'
+    filename = 'runs/385/raw/52-385.txt'
     a = NWaveForm(full_filename=filename)
     print(a.filename)
     print(a.card_number)
@@ -225,6 +233,7 @@ if __name__ == '__main__':
     print(a.all_data[0])
     print(a.check_data())
     print(a.get_rms())
+    print(f'{a.get_max_value()=}')
     a.plot_waveform()
     a.plot_rms()
 
