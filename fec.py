@@ -124,7 +124,7 @@ def adcd(link: int = 0, n: int = 10, printing: bool = False):
     # oscmd('echo ".">toConsole.txt');
     #       0       1     2       3      4      5      6      7      8     9      10     11     12     13     14     15
     #    |......|......|......|......|......|......|......|......|......|......|......|......|......|......|......|......|......|
-    header = "\n    |  T    1.7Vi  1.1Vc5 1.25Vd mA2 S0 mA1 S0 1.1Vr  1.25Va mA0 S0  Tsam  1.25Va mA3 S1 1.1Vr  mA4 S1 mA5 S1 1.25Va \n"
+    header = "\n    |  T      1.7Vi    1.1Vc5   1.25Vd   mA2_S0   mA1_S0   1.1Vr    1.25Va   mA0_S0    Tsam    1.25Va   mA3_S1   1.1Vr    mA4_S1   mA5_S1   1.25Va \n"
     color_print(header)  # print hd
     for j in range(n):
         res = adc(link=link, printing=printing)
@@ -146,7 +146,7 @@ def adcd(link: int = 0, n: int = 10, printing: bool = False):
             ar[13] = float(ar[13])/20
             ar[14] = float(ar[14])/2.5
             svn = ['%2.1f' % val for val in ar]
-            sout = '      %s  %s %s %s   %s  %s %s%s  %s  %s  %s %s  %s %s  %s  %s ' % \
+            sout = '      %s    %s   %s   %s   %s    %s      %s   %s   %s     %s    %s   %s    %s   %s      %s    %s  ' % \
                    (svn[0], svn[1], svn[2], svn[3], svn[4], svn[5], svn[6], svn[7], svn[8], svn[9],
                     svn[10], svn[11], svn[12], svn[13], svn[14], svn[15])
             print(sout)
@@ -198,7 +198,7 @@ class SampaNumber(enum.Enum):
     FIRST: int = 1
 
 
-def getffw(link: int, runs_number: int = 1, single: bool = False):
+def getffw(link: int, runs_number: int = 1, single: bool = False, data_filter: bool = True) -> tuple:
     # ttok(f'car {link}')
     card_number = get_card_number(link=link, single=single)
     file_number = int(get_file_number(card_number))  # TODO придумать как передавать имя теста 1
@@ -215,7 +215,7 @@ def getffw(link: int, runs_number: int = 1, single: bool = False):
             # print(f'{received_data=}')
             print(f'Run #{nrun}, TTH>>{received_data[-3].decode()}\n')
             wform = NWaveForm(raw_data=received_data[1:-34])
-            if not wform.check_data():
+            if not wform.check_data() and data_filter:
                 runs_number += 1
             else:
                 events_file.write((b' '.join(b'0x' + word for word in received_data[1:-34]) + b'\n').decode())
@@ -282,9 +282,9 @@ def ini_all() -> None:
         ini(link)
 
 
-def getffw_all(runs_number: int = 1) -> None:
+def getffw_all(runs_number: int = 1, data_filter: bool = True) -> None:
     for link in range(31):
-        getffw(link=link, runs_number=runs_number, single=False)
+        getffw(link=link, runs_number=runs_number, single=False, data_filter=data_filter)
 
 
 def power_off_all() -> None:
@@ -339,87 +339,14 @@ if __name__ == "__main__":
     print(out.decode('utf-8'))
 
     try:
-        # get_trstat_all()
-        # ini_all()
-        # get_tts_tth_all()
+
         link = 0
-        # ttok(f'wmsk 0xffffffff')
-        # ttok(f'car 0')
-        # # get_trstat(link=link)
-        # # ini(link=link)
-        # getffw(link=link, runs_number=1, single=True)
-        ttok(f'wmsk 0xfffffffe')
-        # ttok(f'car {link}')
+        ttok(f'wmsk 0xffffffff')
         get_trstat(link=link)
-        # ttok(f'setpll 17 20')
-        # ttok(f'car 2')
-        # power_on(0)
-        # ttok(f'wsa 13 30 {link}'); time.sleep(1)
-        # ttok(f'wsa 77 30 {link}'); time.sleep(1)  # VACFG
-        # ttok(f'wsa 7 10 {link}'); time.sleep(1)
-        # ttok(f'wsa 8 0 {link}'); time.sleep(1)  # TWLen.0
-        # ttok(f'wsa 71 10 {link}'); time.sleep(1)
-        # ttok(f'wsa 72 0 {link}'); time.sleep(1)  # TWLen.1
-        # ttok(f'wsa 9 0 {link}'); time.sleep(1)
-        # ttok(f'wsa 10 0 {link}'); time.sleep(1)
-        # ttok(f'wsa 73 0 {link}'); time.sleep(1)
-        # ttok(f'wsa 74 0 {link}'); time.sleep(1)  # AQStart
-        # ttok(f'wsa 11 10 {link}'); time.sleep(1)
-        # ttok(f'wsa 12 0 {link}'); time.sleep(1)
-        # ttok(f'wsa 75 10 {link}'); time.sleep(1)
-        # ttok(f'wsa 76 0 {link}'); time.sleep(1)  # AQStop
-        # ttok(f'wxv 0x944 0x6600 {link}'); time.sleep(1)  # #  wxv   0x944 0x6600 0;
-        # ttok(f'kmsffw 0x0 {link}'); time.sleep(1)
-        # ttok(f'kmslkw 0xff {link}'); time.sleep(1)  # set k 0;kmsffw 0x0 $k; kmslkw 0x0 $k;
-        # ttok(f'getsetpll {link}'); time.sleep(1)
-        # ttok(f'cff;')
-        # ttok(f'tts 1;tth 1')
-        # ttok(f'rff')
-        # ttok(f'soft 0')
-        # ttok(f'hard 0')
-        ttok(f'rsa 13;rsa 77')
-        ttok(f'rsa 7;rsa 8')
-        ttok(f'rsa 71;rsa 72')
-        ttok(f'tth 1')
-        ttok(f'getdd 0')
-        ttok(f'getdd 1')
-        # ttok(f'gwtffw')
+        ini(link=link)
+        adcd(link=link, n=1)
+        getffw(link=link, runs_number=1, single=True)
 
-        # scan_card_pll(link=link, runs=3)
-
-        # ttok(f'car 0; tth 1;')
-        # lo = []
-        # with open('temp_tth.lst', 'w') as fl:
-        #     for i in range(100):
-        #         b = ttok(f'getdd 0; getdd 1').split(b',')
-        #         lo.append()
-        #         fl.write((b' '.join(b'0x' + word for word in lo) + b'\n').decode())
-
-        # b = ttok(f'getdd 0; getdd 1')
-
-        # a = ['0xfffffffe', '0xfffffffd', '0xfffffffb']
-        # for i in range(3):
-        #     # ttok(f'jtag1')
-        #     # ttok(f'rmsk')
-        #     ttok(f'wmsk 0xffffffff')
-        #     # ttok(f'rmsk')
-        #     get_trstat(link=i)
-        #     ini(link=i)
-        #     # ttok(f'car {i}')
-        #     get_trstat(link=i)
-        #     adcd(link=i, n=1)
-        #
-        #     getffw(link=i, runs_number=1)
-        # get_trstat(link=31)
-        # ini(link=31)
-        # ttok(f'car 31;setpll 6 7')
-        # ttok(f'car 31;tts 11; tth 111')
-        # adcd(link=31, n=3, printing=False)
-        # getffw(link=31, runs_number=1)
-        # scan_card_pll(link=31)
-
-        # print(get_card_number(single=True))
-        # print(get_file_number())
 
     except Exception as e:
         print(e)
