@@ -75,7 +75,7 @@ def power_on(link: int = 0) -> None:
 
 
 def ini(link=1, fini=''):
-    ttok(f'car {link}')
+    ttok(f'wmsk 0xffffffff;car {link}')
     power_on(link=link)
     if fini == '':
         ttok(f'wsa 13 30 {link};'
@@ -116,7 +116,7 @@ def ini(link=1, fini=''):
 
 
 def adc(link: int = 0, printing: bool = True):
-    result = ttok(f'car {link};adc', printing=printing)
+    result = ttok(f'wmsk 0xffffffff;car {link};adc', printing=printing)
     return result
 
 
@@ -129,7 +129,7 @@ def adcd(link: int = 0, n: int = 10, printing: bool = False):
     for j in range(n):
         res = adc(link=link, printing=printing)
         arow = res.replace(b',', b'').split(b' ')
-        ar = [int(a, 16)*0.61 for a in arow[2:]]
+        ar = [int(a, 16) * 0.61 for a in arow[3:]]
         if 0 == 0:
             r = ar[0]
             a = -1.064200E-09
@@ -139,12 +139,12 @@ def adcd(link: int = 0, n: int = 10, printing: bool = False):
             rs = ar[9]
             ar[0] = a * r ** 3 + b * r ** 2 + c * r + d
             ar[9] = a * rs ** 3 + b * rs ** 2 + c * rs + d
-            ar[4] = float(ar[4])/2.5
-            ar[5] = float(ar[5])/20
-            ar[8] = float(ar[8])/2.5
-            ar[11] = float(ar[11])/2.5
-            ar[13] = float(ar[13])/20
-            ar[14] = float(ar[14])/2.5
+            ar[4] = float(ar[4]) / 2.5
+            ar[5] = float(ar[5]) / 20
+            ar[8] = float(ar[8]) / 2.5
+            ar[11] = float(ar[11]) / 2.5
+            ar[13] = float(ar[13]) / 20
+            ar[14] = float(ar[14]) / 2.5
             svn = ['%2.1f' % val for val in ar]
             sout = '      %s    %s   %s   %s   %s    %s      %s   %s   %s     %s    %s   %s    %s   %s      %s    %s  ' % \
                    (svn[0], svn[1], svn[2], svn[3], svn[4], svn[5], svn[6], svn[7], svn[8], svn[9],
@@ -198,21 +198,30 @@ class SampaNumber(enum.Enum):
     FIRST: int = 1
 
 
-def getffw(link: int, runs_number: int = 1, single: bool = False, data_filter: bool = True) -> tuple:
+def getff(link: int) -> list[bytes]:
+    return ttok(f'wmsk 0xffffffff;'
+                f'car {link};'
+                f'tth 1;'
+                f'getdd {SampaNumber.ZERO.value};'
+                f'getdd {SampaNumber.FIRST.value}', False).split(b',')
+
+
+def getffw(link: int,
+           runs_number: int = 1,
+           single: bool = False,
+           data_filter: bool = True,
+           test_name: TestsName = TestsName.RAW) -> None:
     # ttok(f'car {link}')
     card_number = get_card_number(link=link, single=single)
-    file_number = int(get_file_number(card_number))  # TODO придумать как передавать имя теста 1
-    file_mane = f'{file_number}-{card_number}.txt'
+    file_number = int(get_file_number(card_number, test_name=test_name))  # TODO придумать как передавать имя теста 1
+    file_name = f'{file_number}-{card_number}.txt'
     print(f'Initiated run')
-    print(f'Card number: {card_number}, file name: {file_mane}, run: {file_number}')
+    print(f'Card number: {card_number}, file name: {file_name}, run: {file_number}')
     with open('events.lst', 'w') as events_file:
         nrun = 1
         while runs_number:
-            received_data = ttok(f'car {link};'
-                                 f'tth 1;'
-                                 f'getdd {SampaNumber.ZERO.value};'
-                                 f'getdd {SampaNumber.FIRST.value}', False).split(b',')
-            # print(f'{received_data=}')
+            received_data = getff(link=link)
+            print(f'{received_data=}')
             print(f'Run #{nrun}, TTH>>{received_data[-3].decode()}\n')
             wform = NWaveForm(raw_data=received_data[1:-34])
             if not wform.check_data() and data_filter:
@@ -221,13 +230,14 @@ def getffw(link: int, runs_number: int = 1, single: bool = False, data_filter: b
                 events_file.write((b' '.join(b'0x' + word for word in received_data[1:-34]) + b'\n').decode())
             runs_number -= 1
             nrun += 1
-    oscmd(f'cp events.lst ./runs/{card_number}/{TestsName.RAW.value}/{file_mane}')  # TODO придумать как передавать имя теста 2
+    oscmd(
+        f'cp events.lst ./runs/{card_number}/{test_name.value}/{file_name}')  # TODO придумать как передавать имя теста 2
     return
 
 
 def get_trstat(link: int) -> dict:
     fec_trstats = {}
-    ttok(f'car {link}')
+    ttok(f'wmsk 0xffffffff;car {link}')
     trstat_data = ttok(f'trstat {link}').split(b'  ')
     try:
         cid = trstat_data[2].decode().split(' ')[1]
@@ -269,12 +279,12 @@ def get_trstat_all() -> dict:
 
 def get_tth_all() -> None:
     for i in range(31):
-        ttok(f'car {i};ttok ;tth 2')
+        ttok(f'wmsk 0xffffffff;car {i};ttok ;tth 2')
 
 
 def get_tts_tth_all() -> None:
     for i in range(31):
-        ttok(f'car {i};tts 2;tth 2')
+        ttok(f'wmsk 0xffffffff;car {i};tts 2;tth 2')
 
 
 def ini_all() -> None:
@@ -293,12 +303,12 @@ def power_off_all() -> None:
 
 
 def power_off(link: int) -> None:
-    ttok(f'car {link};wxv 0x904 0x0 {link}')
+    ttok(f'wmsk 0xffffffff;car {link};wxv 0x904 0x0 {link}')
 
 
 def power_on_all() -> None:
     for link in range(31):
-        ttok(f'car {link}')
+        ttok(f'wmsk 0xffffffff;car {link}')
         power_on(link=link)
 
 
@@ -314,7 +324,7 @@ def scan_card_pll(link: int = 0, runs: int = 1) -> dict:
             pll_dict = dict()
             pll_dict['sh0'] = bin(int(pll[3], 16))
             pll_dict['sh1'] = bin(int(pll[7], 16))
-            pf.write(str(pll_dict)+'\n')
+            pf.write(str(pll_dict) + '\n')
             print(pll_dict)
     return pll_dict
 
@@ -340,11 +350,11 @@ if __name__ == "__main__":
 
     try:
 
-        link = 0
+        link = 31
         ttok(f'wmsk 0xffffffff')
-        get_trstat(link=link)
-        ini(link=link)
-        adcd(link=link, n=1)
+        # get_trstat(link=link)
+        # ini(link=link)
+        # adcd(link=link, n=10)
         getffw(link=link, runs_number=1, single=True)
 
 
@@ -357,4 +367,3 @@ if __name__ == "__main__":
         tln.close()
         main_stop = perf_counter()
         print(f'main_time={main_stop - main_start}')
-
