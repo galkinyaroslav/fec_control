@@ -627,6 +627,43 @@ files = [
 ]
 
 [[package]]
+name = "pyvisa"
+version = "1.14.1"
+description = "Python VISA bindings for GPIB, RS232, TCPIP and USB instruments"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "PyVISA-1.14.1-py3-none-any.whl", hash = "sha256:6e4dfc9b6029b4f00d0d4960348c4889c2747aa7f83276950d48a349eab36a45"},
+    {file = "PyVISA-1.14.1.tar.gz", hash = "sha256:71030041ed4c5dad77687454cf44b8be4d1642e9d1aaa22019248d41d8ed7a79"},
+]
+
+[package.dependencies]
+typing-extensions = "*"
+
+[[package]]
+name = "pyvisa-py"
+version = "0.7.1"
+description = "Pure Python implementation of a VISA library."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "PyVISA-py-0.7.1.tar.gz", hash = "sha256:d0dd824055fd8cab8a2685d10e1277d52ad19604322fa53c17b47e70258d4594"},
+    {file = "PyVISA_py-0.7.1-py3-none-any.whl", hash = "sha256:3675aa9fcabfcee6fbcc1e596f565c2538ecd0f69e7061f479d147b4afbd8c75"},
+]
+
+[package.dependencies]
+pyvisa = ">=1.13.0"
+typing-extensions = "*"
+
+[package.extras]
+gpib-ctypes = ["gpib-ctypes (>=0.3.0)"]
+hislip-discovery = ["zeroconf"]
+psutil = ["psutil"]
+serial = ["pyserial (>=3.0)"]
+usb = ["pyusb"]
+vicp = ["pyvicp", "zeroconf"]
+
+[[package]]
 name = "scipy"
 version = "1.12.0"
 description = "Fundamental algorithms for scientific computing in Python"
@@ -693,6 +730,17 @@ files = [
 ]
 
 [[package]]
+name = "typing-extensions"
+version = "4.9.0"
+description = "Backported and Experimental Type Hints for Python 3.8+"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "typing_extensions-4.9.0-py3-none-any.whl", hash = "sha256:af72aea155e91adfc61c3ae9e0e342dbc0cba726d6cba4b6c72c1f34e47291cd"},
+    {file = "typing_extensions-4.9.0.tar.gz", hash = "sha256:23478f88c37f27d76ac8aee6c905017a143b0b1b886c3c9f66bc2fd94f9f5783"},
+]
+
+[[package]]
 name = "tzdata"
 version = "2023.4"
 description = "Provider of IANA time zone data"
@@ -721,4 +769,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "<3.13,>=3.9"
-content-hash = "9ef7aa4ebe6973f2dadfbff3ef6fca9a05a5af58902b89b1beb4e4098cf2207a"
+content-hash = "b43e19753256f4d56abf43931c57d6706497b54248f04844ba4a54eaef910b9f"
