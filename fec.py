@@ -352,11 +352,10 @@ if __name__ == "__main__":
 
         link = 31
         ttok(f'wmsk 0xffffffff')
-        # get_trstat(link=link)
-        # ini(link=link)
-        # adcd(link=link, n=10)
+        get_trstat(link=link)
+        ini(link=link)
+        adcd(link=link, n=10)
         getffw(link=link, runs_number=1, single=True)
-
 
     except Exception as e:
         print(e)
