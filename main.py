@@ -1,10 +1,14 @@
+import json
 import os.path
 import sys
+import telnetlib
+import traceback
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIntValidator, QFont
 from PySide6.QtWidgets import QMainWindow, QApplication
 
+from fec import FEC
 from waveform import NWaveForm
 from waveform_window import WaveFormWindow, RMSWindow
 from MainWindow import Ui_MainWindow
@@ -15,13 +19,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
 
+        # PLOTTING
         self.waveform_window = WaveFormWindow()
         self.rms_window = RMSWindow()
 
         self.__plot_card_number = self.plot_card_number_lineEdit.placeholderText()
         self.__plot_cdet = self.plot_cdet_comboBox.itemText(self.plot_cdet_comboBox.currentIndex())
         self.__plot_test_name = self.plot_test_name_comboBox.itemText(self.plot_test_name_comboBox.currentIndex())
-        print(f'{self.__plot_test_name}')
         self.__plot_parity = self.plot_parity_comboBox.itemText(self.plot_parity_comboBox.currentIndex())
         self.__plot_run_number = self.plot_run_number_lineEdit.placeholderText()
         self.__plot_event_number = self.plot_event_number_lineEdit.placeholderText()
@@ -48,7 +52,38 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.plot_event_number_lineEdit.editingFinished.connect(self.plot_event_number_edit)
         self.plot_amplitude_lineEdit.editingFinished.connect(self.plot_amplitude_edit)
 
+        # BASIC COMMANDS
+        self.__link = 31
+        self.__card_number = None
+        self.__pll = None
+        self.__cid = None
+        self.__rid = None
+        self.__mask = None
+        self.link_spinBox.valueChanged.connect(self.link_value_changed)
+
+        self.trstat_btn.clicked.connect(self.trstat_fc)
+
         self.show()
+
+    def trstat_fc(self, pressed):
+        fe_card.ttok(f'wmsk 0xffffffff')
+        fe_card.get_trstat(link=self.__link)
+        with open('current_fec_trstats.json', 'r') as f:
+            data = json.load(f)
+            self.__card_number = data['card']
+            self.__pll = str(data['sh0']) + ', ' + str(data['sh1'])
+            self.__cid = data['cid']
+            self.__rid = data['rid']
+            self.__mask = data['mask']
+            self.card_number_value_label.setText(str(self.__card_number))
+            self.pll_value_label.setText(str(self.__pll))
+            self.cid_value_label.setText(str(self.__cid))
+            self.rid_value_label.setText(str(self.__rid))
+            self.mask_value_label.setText(str(self.__mask))
+
+
+    def link_value_changed(self):
+        self.__link = self.link_spinBox.value()
 
     def plot_amplitude_edit(self):
         self.__plot_amplitude = self.plot_amplitude_lineEdit.text()
@@ -123,6 +158,37 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.rms_window.show()
 
 
-app = QApplication(sys.argv)
-w = MainWindow()
-app.exec()
+
+host = '192.168.1.235'
+port = 30
+# tln = telnetlib.Telnet(timeout=10)
+# tln.open(host=host, port=port)
+# out = tln.read_until('return:\n\r'.encode('utf-8'), timeout=10)
+# print(out.decode('utf-8'))
+fe_card = FEC(host=host, port=port)
+
+try:
+    # np.set_printoptions(linewidth=1000, threshold=np.inf)
+
+
+    # link = 31
+    # fec.ttok(f'wmsk 0xffffffff')
+    # fec.get_trstat(link=link)
+    # fec.ini(link=link)
+    # asd = fec.adcd(link=link, n=10)
+    # fec.getffw(link=link, runs_number=1, single=True)
+
+    # print(f'{asd=}')
+    app = QApplication(sys.argv)
+    w = MainWindow()
+    app.exec()
+except Exception as e:
+    print(e)
+    print(traceback.format_exc())
+
+finally:
+    fe_card.tln.write('!\r\n'.encode('utf-8'))
+    fe_card.tln.close()
+
+
+

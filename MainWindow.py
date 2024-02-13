@@ -398,6 +398,7 @@ class Ui_MainWindow(object):
         self.link_spinBox.setSizePolicy(sizePolicy)
         self.link_spinBox.setMinimumSize(QSize(40, 20))
         self.link_spinBox.setMaximum(31)
+        self.link_spinBox.setValue(31)
 
         self.gridLayout_2.addWidget(self.link_spinBox, 0, 2, 1, 1)
 

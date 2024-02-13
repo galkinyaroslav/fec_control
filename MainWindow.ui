@@ -847,6 +847,9 @@
            <property name="maximum">
             <number>31</number>
            </property>
+           <property name="value">
+            <number>31</number>
+           </property>
           </widget>
          </item>
          <item row="8" column="0" colspan="2">
