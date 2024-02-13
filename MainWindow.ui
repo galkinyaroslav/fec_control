@@ -168,6 +168,9 @@
          <property name="alignment">
           <set>Qt::AlignCenter</set>
          </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
         </widget>
        </item>
       </layout>
@@ -273,6 +276,9 @@
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -513,6 +519,9 @@
          <property name="alignment">
           <set>Qt::AlignCenter</set>
          </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
         </widget>
        </item>
       </layout>
@@ -696,11 +705,14 @@
            <property name="minimumSize">
             <size>
              <width>40</width>
-             <height>20</height>
+             <height>40</height>
             </size>
            </property>
            <property name="text">
             <string>./runs/n_card/cdet/test_name/file_name</string>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -1226,6 +1238,53 @@
              <height>20</height>
             </size>
            </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="placeholderText">
+            <string>385</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="2" colspan="2">
+          <widget class="QLineEdit" name="plot_event_number_lineEdit">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>20</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="placeholderText">
+            <string>0</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0" colspan="2" alignment="Qt::AlignLeft">
+          <widget class="QLabel" name="plot_run_number_label">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>20</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Run</string>
+           </property>
           </widget>
          </item>
          <item row="4" column="2" colspan="2">
@@ -1241,6 +1300,50 @@
              <width>100</width>
              <height>20</height>
             </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="placeholderText">
+            <string>1</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="0" colspan="2">
+          <widget class="QLabel" name="plot_amplitude_label">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>20</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Amplitude</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0" colspan="2" alignment="Qt::AlignLeft">
+          <widget class="QLabel" name="plot_cdet_label">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>20</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Cdet</string>
            </property>
           </widget>
          </item>
@@ -1308,8 +1411,8 @@
            </property>
           </widget>
          </item>
-         <item row="4" column="0" colspan="2" alignment="Qt::AlignLeft">
-          <widget class="QLabel" name="plot_run_number_label">
+         <item row="6" column="2" colspan="2">
+          <widget class="QLineEdit" name="plot_amplitude_lineEdit">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
              <horstretch>0</horstretch>
@@ -1323,7 +1426,48 @@
             </size>
            </property>
            <property name="text">
-            <string>Run</string>
+            <string/>
+           </property>
+           <property name="placeholderText">
+            <string>100</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0" colspan="2" alignment="Qt::AlignLeft">
+          <widget class="QLabel" name="plot_card_number_label">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>20</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Card #</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0" colspan="2" alignment="Qt::AlignLeft">
+          <widget class="QLabel" name="plot_event_number_label">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>20</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Event</string>
            </property>
           </widget>
          </item>
@@ -1379,6 +1523,11 @@
            </property>
            <item>
             <property name="text">
+             <string>RAW</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
              <string>RMS_PEDESTAL</string>
             </property>
            </item>
@@ -1392,87 +1541,34 @@
              <string>GAIN</string>
             </property>
            </item>
-           <item>
-            <property name="text">
-             <string>RAW</string>
-            </property>
-           </item>
-          </widget>
-         </item>
-         <item row="0" column="0" colspan="2" alignment="Qt::AlignLeft">
-          <widget class="QLabel" name="plot_card_number_label">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>20</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Card #</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0" colspan="2" alignment="Qt::AlignLeft">
-          <widget class="QLabel" name="plot_cdet_label">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>20</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Cdet</string>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="0" colspan="2" alignment="Qt::AlignLeft">
-          <widget class="QLabel" name="plot_event_number_label">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>20</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Event</string>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="2" colspan="2">
-          <widget class="QLineEdit" name="plot_event_number_lineEdit">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>20</height>
-            </size>
-           </property>
           </widget>
          </item>
         </layout>
+       </item>
+       <item>
+        <widget class="QLabel" name="plot_file_exist_label">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>60</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>File Exist / Not Exist</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QPushButton" name="show_waveform_btn">

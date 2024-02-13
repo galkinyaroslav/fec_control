@@ -99,6 +99,7 @@ class Ui_MainWindow(object):
         self.crosstalk_last_run_label.setSizePolicy(sizePolicy)
         self.crosstalk_last_run_label.setMinimumSize(QSize(60, 20))
         self.crosstalk_last_run_label.setAlignment(Qt.AlignCenter)
+        self.crosstalk_last_run_label.setWordWrap(True)
 
         self.verticalLayout_4.addWidget(self.crosstalk_last_run_label, 0, Qt.AlignHCenter)
 
@@ -147,6 +148,7 @@ class Ui_MainWindow(object):
         self.pedestal_lastrun_label.setSizePolicy(sizePolicy)
         self.pedestal_lastrun_label.setMinimumSize(QSize(60, 20))
         self.pedestal_lastrun_label.setAlignment(Qt.AlignCenter)
+        self.pedestal_lastrun_label.setWordWrap(True)
 
         self.verticalLayout_6.addWidget(self.pedestal_lastrun_label, 0, Qt.AlignHCenter)
 
@@ -253,6 +255,7 @@ class Ui_MainWindow(object):
         self.gain_lastrun_label.setSizePolicy(sizePolicy)
         self.gain_lastrun_label.setMinimumSize(QSize(60, 20))
         self.gain_lastrun_label.setAlignment(Qt.AlignCenter)
+        self.gain_lastrun_label.setWordWrap(True)
 
         self.verticalLayout_5.addWidget(self.gain_lastrun_label, 0, Qt.AlignHCenter)
 
@@ -336,7 +339,8 @@ class Ui_MainWindow(object):
         self.raw_lastrun_name_label.setObjectName(u"raw_lastrun_name_label")
         sizePolicy1.setHeightForWidth(self.raw_lastrun_name_label.sizePolicy().hasHeightForWidth())
         self.raw_lastrun_name_label.setSizePolicy(sizePolicy1)
-        self.raw_lastrun_name_label.setMinimumSize(QSize(40, 20))
+        self.raw_lastrun_name_label.setMinimumSize(QSize(40, 40))
+        self.raw_lastrun_name_label.setWordWrap(True)
 
         self.gridLayout_2.addWidget(self.raw_lastrun_name_label, 15, 0, 1, 3)
 
@@ -575,6 +579,22 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.plot_card_number_lineEdit, 0, 2, 1, 2)
 
+        self.plot_event_number_lineEdit = QLineEdit(self.frame)
+        self.plot_event_number_lineEdit.setObjectName(u"plot_event_number_lineEdit")
+        sizePolicy.setHeightForWidth(self.plot_event_number_lineEdit.sizePolicy().hasHeightForWidth())
+        self.plot_event_number_lineEdit.setSizePolicy(sizePolicy)
+        self.plot_event_number_lineEdit.setMinimumSize(QSize(100, 20))
+
+        self.gridLayout.addWidget(self.plot_event_number_lineEdit, 5, 2, 1, 2)
+
+        self.plot_run_number_label = QLabel(self.frame)
+        self.plot_run_number_label.setObjectName(u"plot_run_number_label")
+        sizePolicy.setHeightForWidth(self.plot_run_number_label.sizePolicy().hasHeightForWidth())
+        self.plot_run_number_label.setSizePolicy(sizePolicy)
+        self.plot_run_number_label.setMinimumSize(QSize(100, 20))
+
+        self.gridLayout.addWidget(self.plot_run_number_label, 4, 0, 1, 2, Qt.AlignLeft)
+
         self.plot_run_number_lineEdit = QLineEdit(self.frame)
         self.plot_run_number_lineEdit.setObjectName(u"plot_run_number_lineEdit")
         sizePolicy.setHeightForWidth(self.plot_run_number_lineEdit.sizePolicy().hasHeightForWidth())
@@ -582,6 +602,22 @@ class Ui_MainWindow(object):
         self.plot_run_number_lineEdit.setMinimumSize(QSize(100, 20))
 
         self.gridLayout.addWidget(self.plot_run_number_lineEdit, 4, 2, 1, 2)
+
+        self.plot_amplitude_label = QLabel(self.frame)
+        self.plot_amplitude_label.setObjectName(u"plot_amplitude_label")
+        sizePolicy.setHeightForWidth(self.plot_amplitude_label.sizePolicy().hasHeightForWidth())
+        self.plot_amplitude_label.setSizePolicy(sizePolicy)
+        self.plot_amplitude_label.setMinimumSize(QSize(100, 20))
+
+        self.gridLayout.addWidget(self.plot_amplitude_label, 6, 0, 1, 2)
+
+        self.plot_cdet_label = QLabel(self.frame)
+        self.plot_cdet_label.setObjectName(u"plot_cdet_label")
+        sizePolicy.setHeightForWidth(self.plot_cdet_label.sizePolicy().hasHeightForWidth())
+        self.plot_cdet_label.setSizePolicy(sizePolicy)
+        self.plot_cdet_label.setMinimumSize(QSize(100, 20))
+
+        self.gridLayout.addWidget(self.plot_cdet_label, 1, 0, 1, 2, Qt.AlignLeft)
 
         self.plot_parity_label = QLabel(self.frame)
         self.plot_parity_label.setObjectName(u"plot_parity_label")
@@ -609,13 +645,29 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.plot_test_name_label, 2, 0, 1, 2, Qt.AlignLeft)
 
-        self.plot_run_number_label = QLabel(self.frame)
-        self.plot_run_number_label.setObjectName(u"plot_run_number_label")
-        sizePolicy.setHeightForWidth(self.plot_run_number_label.sizePolicy().hasHeightForWidth())
-        self.plot_run_number_label.setSizePolicy(sizePolicy)
-        self.plot_run_number_label.setMinimumSize(QSize(100, 20))
+        self.plot_amplitude_lineEdit = QLineEdit(self.frame)
+        self.plot_amplitude_lineEdit.setObjectName(u"plot_amplitude_lineEdit")
+        sizePolicy.setHeightForWidth(self.plot_amplitude_lineEdit.sizePolicy().hasHeightForWidth())
+        self.plot_amplitude_lineEdit.setSizePolicy(sizePolicy)
+        self.plot_amplitude_lineEdit.setMinimumSize(QSize(100, 20))
 
-        self.gridLayout.addWidget(self.plot_run_number_label, 4, 0, 1, 2, Qt.AlignLeft)
+        self.gridLayout.addWidget(self.plot_amplitude_lineEdit, 6, 2, 1, 2)
+
+        self.plot_card_number_label = QLabel(self.frame)
+        self.plot_card_number_label.setObjectName(u"plot_card_number_label")
+        sizePolicy.setHeightForWidth(self.plot_card_number_label.sizePolicy().hasHeightForWidth())
+        self.plot_card_number_label.setSizePolicy(sizePolicy)
+        self.plot_card_number_label.setMinimumSize(QSize(100, 20))
+
+        self.gridLayout.addWidget(self.plot_card_number_label, 0, 0, 1, 2, Qt.AlignLeft)
+
+        self.plot_event_number_label = QLabel(self.frame)
+        self.plot_event_number_label.setObjectName(u"plot_event_number_label")
+        sizePolicy.setHeightForWidth(self.plot_event_number_label.sizePolicy().hasHeightForWidth())
+        self.plot_event_number_label.setSizePolicy(sizePolicy)
+        self.plot_event_number_label.setMinimumSize(QSize(100, 20))
+
+        self.gridLayout.addWidget(self.plot_event_number_label, 5, 0, 1, 2, Qt.AlignLeft)
 
         self.plot_cdet_comboBox = QComboBox(self.frame)
         self.plot_cdet_comboBox.addItem("")
@@ -641,40 +693,18 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.plot_test_name_comboBox, 2, 2, 1, 2)
 
-        self.plot_card_number_label = QLabel(self.frame)
-        self.plot_card_number_label.setObjectName(u"plot_card_number_label")
-        sizePolicy.setHeightForWidth(self.plot_card_number_label.sizePolicy().hasHeightForWidth())
-        self.plot_card_number_label.setSizePolicy(sizePolicy)
-        self.plot_card_number_label.setMinimumSize(QSize(100, 20))
-
-        self.gridLayout.addWidget(self.plot_card_number_label, 0, 0, 1, 2, Qt.AlignLeft)
-
-        self.plot_cdet_label = QLabel(self.frame)
-        self.plot_cdet_label.setObjectName(u"plot_cdet_label")
-        sizePolicy.setHeightForWidth(self.plot_cdet_label.sizePolicy().hasHeightForWidth())
-        self.plot_cdet_label.setSizePolicy(sizePolicy)
-        self.plot_cdet_label.setMinimumSize(QSize(100, 20))
-
-        self.gridLayout.addWidget(self.plot_cdet_label, 1, 0, 1, 2, Qt.AlignLeft)
-
-        self.plot_event_number_label = QLabel(self.frame)
-        self.plot_event_number_label.setObjectName(u"plot_event_number_label")
-        sizePolicy.setHeightForWidth(self.plot_event_number_label.sizePolicy().hasHeightForWidth())
-        self.plot_event_number_label.setSizePolicy(sizePolicy)
-        self.plot_event_number_label.setMinimumSize(QSize(100, 20))
-
-        self.gridLayout.addWidget(self.plot_event_number_label, 5, 0, 1, 2, Qt.AlignLeft)
-
-        self.plot_event_number_lineEdit = QLineEdit(self.frame)
-        self.plot_event_number_lineEdit.setObjectName(u"plot_event_number_lineEdit")
-        sizePolicy.setHeightForWidth(self.plot_event_number_lineEdit.sizePolicy().hasHeightForWidth())
-        self.plot_event_number_lineEdit.setSizePolicy(sizePolicy)
-        self.plot_event_number_lineEdit.setMinimumSize(QSize(100, 20))
-
-        self.gridLayout.addWidget(self.plot_event_number_lineEdit, 5, 2, 1, 2)
-
 
         self.verticalLayout.addLayout(self.gridLayout)
+
+        self.plot_file_exist_label = QLabel(self.frame)
+        self.plot_file_exist_label.setObjectName(u"plot_file_exist_label")
+        sizePolicy.setHeightForWidth(self.plot_file_exist_label.sizePolicy().hasHeightForWidth())
+        self.plot_file_exist_label.setSizePolicy(sizePolicy)
+        self.plot_file_exist_label.setMinimumSize(QSize(60, 40))
+        self.plot_file_exist_label.setAlignment(Qt.AlignCenter)
+        self.plot_file_exist_label.setWordWrap(True)
+
+        self.verticalLayout.addWidget(self.plot_file_exist_label)
 
         self.show_waveform_btn = QPushButton(self.frame)
         self.show_waveform_btn.setObjectName(u"show_waveform_btn")
@@ -760,25 +790,35 @@ class Ui_MainWindow(object):
         self.ttok_btn.setText(QCoreApplication.translate("MainWindow", u"Send ttok", None))
         self.ttok_comand_label.setText(QCoreApplication.translate("MainWindow", u"Command:", None))
         self.plot_label.setText(QCoreApplication.translate("MainWindow", u"Plot", None))
+        self.plot_card_number_lineEdit.setText("")
+        self.plot_card_number_lineEdit.setPlaceholderText(QCoreApplication.translate("MainWindow", u"385", None))
+        self.plot_event_number_lineEdit.setText("")
+        self.plot_event_number_lineEdit.setPlaceholderText(QCoreApplication.translate("MainWindow", u"0", None))
+        self.plot_run_number_label.setText(QCoreApplication.translate("MainWindow", u"Run", None))
+        self.plot_run_number_lineEdit.setText("")
+        self.plot_run_number_lineEdit.setPlaceholderText(QCoreApplication.translate("MainWindow", u"1", None))
+        self.plot_amplitude_label.setText(QCoreApplication.translate("MainWindow", u"Amplitude", None))
+        self.plot_cdet_label.setText(QCoreApplication.translate("MainWindow", u"Cdet", None))
         self.plot_parity_label.setText(QCoreApplication.translate("MainWindow", u"Parity", None))
         self.plot_parity_comboBox.setItemText(0, QCoreApplication.translate("MainWindow", u"ODD", None))
         self.plot_parity_comboBox.setItemText(1, QCoreApplication.translate("MainWindow", u"EVEN", None))
 
         self.plot_test_name_label.setText(QCoreApplication.translate("MainWindow", u"Test", None))
-        self.plot_run_number_label.setText(QCoreApplication.translate("MainWindow", u"Run", None))
+        self.plot_amplitude_lineEdit.setText("")
+        self.plot_amplitude_lineEdit.setPlaceholderText(QCoreApplication.translate("MainWindow", u"100", None))
+        self.plot_card_number_label.setText(QCoreApplication.translate("MainWindow", u"Card #", None))
+        self.plot_event_number_label.setText(QCoreApplication.translate("MainWindow", u"Event", None))
         self.plot_cdet_comboBox.setItemText(0, QCoreApplication.translate("MainWindow", u"0pF", None))
         self.plot_cdet_comboBox.setItemText(1, QCoreApplication.translate("MainWindow", u"10pF", None))
         self.plot_cdet_comboBox.setItemText(2, QCoreApplication.translate("MainWindow", u"20pF", None))
         self.plot_cdet_comboBox.setItemText(3, QCoreApplication.translate("MainWindow", u"40pF", None))
 
-        self.plot_test_name_comboBox.setItemText(0, QCoreApplication.translate("MainWindow", u"RMS_PEDESTAL", None))
-        self.plot_test_name_comboBox.setItemText(1, QCoreApplication.translate("MainWindow", u"CROSSTALK", None))
-        self.plot_test_name_comboBox.setItemText(2, QCoreApplication.translate("MainWindow", u"GAIN", None))
-        self.plot_test_name_comboBox.setItemText(3, QCoreApplication.translate("MainWindow", u"RAW", None))
+        self.plot_test_name_comboBox.setItemText(0, QCoreApplication.translate("MainWindow", u"RAW", None))
+        self.plot_test_name_comboBox.setItemText(1, QCoreApplication.translate("MainWindow", u"RMS_PEDESTAL", None))
+        self.plot_test_name_comboBox.setItemText(2, QCoreApplication.translate("MainWindow", u"CROSSTALK", None))
+        self.plot_test_name_comboBox.setItemText(3, QCoreApplication.translate("MainWindow", u"GAIN", None))
 
-        self.plot_card_number_label.setText(QCoreApplication.translate("MainWindow", u"Card #", None))
-        self.plot_cdet_label.setText(QCoreApplication.translate("MainWindow", u"Cdet", None))
-        self.plot_event_number_label.setText(QCoreApplication.translate("MainWindow", u"Event", None))
+        self.plot_file_exist_label.setText(QCoreApplication.translate("MainWindow", u"File Exist / Not Exist", None))
         self.show_waveform_btn.setText(QCoreApplication.translate("MainWindow", u"Show WaveForm", None))
         self.show_rms_btn.setText(QCoreApplication.translate("MainWindow", u"Show RMS", None))
         self.update_plots_btn.setText(QCoreApplication.translate("MainWindow", u"Update Plots", None))
