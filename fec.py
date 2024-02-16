@@ -1,6 +1,7 @@
 import enum
 import json
 import os
+import re
 import sys
 import telnetlib
 import time
@@ -19,7 +20,7 @@ class SampaNumber(enum.Enum):
 
 class TestsName(enum.Enum):
     CROSSTALK: str = 'crosstalk'
-    ENC: str = 'enc'
+    # ENC: str = 'enc'
     GAIN: str = 'gain'
     PLL: str = 'pll'
     RAW: str = 'raw'
@@ -123,7 +124,7 @@ class FEC():
             # # TODO check setpll sp0 sp1:
             # sh0, sh1 = get_card_pll(link)
             # ttok(f'setpll {sh0} {sh1}')
-            return
+            # return
             #
         if fini == 'ini.txt':
             print(" Load from file ...")
@@ -287,6 +288,16 @@ class FEC():
         for i in range(31):
             self.ttok(f'wmsk 0xffffffff;car {i};ttok ;tth 2')
 
+    def get_tts_tth(self, link) -> bool:
+        tth_tts = self.ttok(f'wmsk 0xffffffff;car {link};tts 2;tth 2')
+        b = re.findall(r'Nerr=\s\d*\s', tth_tts.decode())
+        # print(f'{b=}')
+        c = [int(''.join(re.findall(r'\d', i))) for i in b]
+        return True if 0 <= (c[0] | c[1]) <= 1 else False
+
+
+
+
     def get_tts_tth_all(self) -> None:
         for i in range(31):
             self.ttok(f'wmsk 0xffffffff;car {i};tts 2;tth 2')
@@ -312,29 +323,26 @@ class FEC():
             self.power_on(link=link)
 
     def scan_card_pll(self, link: int = 0, runs: int = 1) -> dict:
+        # self.ttok(f'car {link}')
+        # self.get_trstat(link)
+        # card_number = self.get_card_number(link)
+        # file_number = self.get_file_number(card_number=card_number, test_name=TestsName.PLL)
+        # for i in range(runs):
+        #     with (open(f'{file_number}-{card_number}.pll', 'a') as pf):
         self.ttok(f'car {link}')
-        self.get_trstat(link)
-        card_number = self.get_card_number(link)
-        file_number = self.get_file_number(card_number=card_number, test_name=TestsName.PLL)
-        for i in range(runs):
-            with (open(f'{file_number}-{card_number}.pll', 'a') as pf):
-                self.ttok(f'car {link}')
-                pll = self.ttok('scpll0; scpll1').replace(b',', b'').split(b' ')
-                pll_dict = dict()
-                pll_dict['sh0'] = bin(int(pll[3], 16))
-                pll_dict['sh1'] = bin(int(pll[7], 16))
-                pf.write(str(pll_dict) + '\n')
-                print(pll_dict)
+        pll = self.ttok('scpll0; scpll1').replace(b',', b'').split(b' ')
+        pll_dict = dict()
+        pll_dict['sh0'] = bin(int(pll[3], 16))
+        pll_dict['sh1'] = bin(int(pll[7], 16))
+            # pf.write(str(pll_dict) + '\n')
+            # print(pll_dict)
         return pll_dict
 
     def set_card_pll(self, link: int = 0, sh0: int = 0, sh1: int = 0) -> bool:
         self.ttok(f'car {link};setpll {sh0} {sh1}')
         response = self.ttok(f'car {link};tts 2; tth 2').split(b' ')  # TODO return?
         print(int(response[9]), int(response[18]))
-        if int(response[9]) | int(response[18]) <= 1:
-            return True
-        else:
-            return False
+        return True if (int(response[9]) | int(response[18])) <= 1 else False
 
 
 if __name__ == "__main__":
@@ -351,12 +359,14 @@ if __name__ == "__main__":
         np.set_printoptions(linewidth=1000, threshold=np.inf)
         link = 31
         f.ttok(f'wmsk 0xffffffff')
-        f.get_trstat(link=link)
-        f.ini(link=link)
-        asd = f.adcd(link=link, n=10)
-        f.getffw(link=link, runs_number=1, single=True)
+        # f.get_trstat(link=link)
+        # f.ini(link=link)
+        # asd = f.adcd(link=link, n=10)
+        # f.getffw(link=link, runs_number=1, single=True)
 
-        print(f'{asd=}')
+        # print(f'{asd=}')
+
+        print(f.get_tts_tth(link=link))
 
     except Exception as e:
         print(e)
