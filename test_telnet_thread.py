@@ -1,4 +1,9 @@
+import keyword
+import os
 import sys
+import time
+
+import numpy as np
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QTextEdit, QVBoxLayout, QWidget, QLineEdit, \
     QMessageBox, QLabel
 from PySide6.QtCore import QObject, Signal, QRunnable, Slot, QThreadPool
@@ -6,16 +11,16 @@ from fec import FEC  # Импорт вашего модуля FEC
 
 
 class WorkerSignals(QObject):
-    finished = Signal(object)
+    finished = Signal(object, object, object)
 
 
 class Worker(QRunnable):
     def __init__(self, *args, **kwargs):
         super().__init__()
-        # Store constructor arguments (re-used for processing)
         self.args = args
         self.kwargs = kwargs
         self.fec_func = kwargs['fec_func']
+        print(f'{type(self.kwargs)}')
         self.kwargs.pop('fec_func')
         # self.command = command
         self.signals = WorkerSignals()
@@ -23,22 +28,8 @@ class Worker(QRunnable):
 
     @Slot()
     def run(self):
-        # result = self.fe_c.ttok(self.command).decode('utf-8')
         result = self.fec_func(*self.args, **self.kwargs)
-        print(f'{type(result)=},{result=}')
-        self.signals.finished.emit(str(result))
-
-# class TelnetWorker(QObject):
-#     finished = Signal(str)
-#
-#     def __init__(self, fec_instance, command, parent=None):
-#         super().__init__(parent)
-#         self.fe_card = fec_instance
-#         self.command = command
-#
-#     def run_telnet_command(self):
-#         result = self.fe_card.ttok(self.command).decode('utf-8')
-#         self.finished.emit(result)
+        self.signals.finished.emit(self.fec_func, result, self.kwargs)
 
 
 class MainWindow(QMainWindow):
@@ -81,6 +72,13 @@ class MainWindow(QMainWindow):
         # self.button.setGeometry(50, 100, 150, 50)
         self.button5.clicked.connect(lambda: self.execute(fec_func=self.fe_card.getff, link=31))
 
+        self.button6 = QPushButton("adcd", self)
+        # self.button.setGeometry(50, 100, 150, 50)
+        self.button6.clicked.connect(lambda: self.execute(fec_func=self.fe_card.adcd, n=10, link=31))
+
+        self.button7 = QPushButton('adcd_getff', self)
+        self.button7.clicked.connect(lambda: self.execute(fec_func=self.adcd_getff))
+
         self.text_edit = QTextEdit(self)
 
         # self.text_edit.setGeometry(50, 170, 300, 100)
@@ -93,6 +91,8 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(self.button2)
         self.layout.addWidget(self.button3)
         self.layout.addWidget(self.button5)
+        self.layout.addWidget(self.button6)
+        self.layout.addWidget(self.button7)
 
         self.layout.addWidget(self.text_edit)
         self.setLayout(self.layout)
@@ -100,20 +100,40 @@ class MainWindow(QMainWindow):
         self.centralwidget.setLayout(self.layout)
         self.setCentralWidget(self.centralwidget)
 
-    # def start_telnet_thread(self):
-    #     if self.telnet_thread is not None and self.telnet_thread.isRunning():
-    #         return
-    #     command = self.command_line_edit.text()
-    #     self.telnet_thread = QThread()
-    #     telnet_worker = TelnetWorker(self.fe_card, command)
-    #     telnet_worker.moveToThread(self.telnet_thread)
-    #     telnet_worker.finished.connect(self.on_telnet_finished)
-    #     self.telnet_thread.started.connect(telnet_worker.run_telnet_command)
-    #     self.telnet_thread.start()
+    def adcd_getff(self):
+        adcd = self.fe_card.adcd(n=3, link=31)
+        ff = []
+        ff1 = self.fe_card.getff(link=31)
+        ff2 = self.fe_card.getff(link=31)
+        ff.append(ff1)
+        ff.append(ff2)
+        vatfilename = f'1-454.vat'
+        filename = f'1-454.txt'
+
+        path = (f'runs/'
+                f'454/'
+                f'0pF/'
+                f'raw/')
+        fullpath = path + filename
+        vatfullpath = path + vatfilename
+        header = ['T', 'Vi1_7', 'Vc5_1_1', 'Vd1_25', 'mA2_S0', 'mA1_S0', 'Vr1_1_1', 'Va1_1_25', 'mA0_S0', 'Tsam',
+                  'Va2_1_25', 'mA3_S1', 'Vr2_1_1', 'mA4_S1', 'mA5_S1', 'Va3_1_25']
+        # with open(vatfullpath, 'w') as f:
+        #     f.write(f'{' '.join(header)}\n',)
+        # time.sleep(10)
+        np.savetxt(vatfullpath, adcd, delimiter=' ', fmt='%.2f', header=f'{' '.join(header)}')
+        if not os.path.exists(path):
+            os.makedirs(path)
+        with open(fullpath, 'w') as f:
+            for line in ff:
+                f.write(f'{line}\n')
+
+
+        return {'adcd': adcd, 'ff': ff}
 
     def increment(self):
         a = int(self.label.text())
-        self.label.setText(f'{a+1}')
+        self.label.setText(f'{a + 1}')
 
     def execute(self, *args, **kwargs):
         # print(kwargs)
@@ -122,14 +142,20 @@ class MainWindow(QMainWindow):
         # Execute
         self.threadpool.start(worker)
 
-    def on_telnet_finished(self, result):
-        print("Telnet result:", result)
-        self.text_edit.append(result)
-
+    def on_telnet_finished(self, fec_func, result, *args, **kwargs):
+        # print("Telnet fec_func:", fec_func)
+        print(f'{fec_func.__name__} is finished')
+        # match fec_func.__name__:
+        #     case 'adcd_getff':
+        #         print(f'{result['adcd']=}')
+        #         print(f'{result["ff"]=}')
+        # print("Telnet result:", result)
+        # print("Telnet args:", args)
+        # self.text_edit.append(result)
 
     def closeEvent(self, event):
         reply = QMessageBox.question(self, 'Message',
-            "Are you sure to quit?", QMessageBox.Yes, QMessageBox.No)
+                                     "Are you sure to quit?", QMessageBox.Yes, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
             self.fe_card.tln.write('!\r\n'.encode('utf-8'))
@@ -137,6 +163,7 @@ class MainWindow(QMainWindow):
             event.accept()
         else:
             event.ignore()
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
