@@ -891,10 +891,10 @@ class Ui_MainWindow(object):
         self.plot_cdet_comboBox.setItemText(2, QCoreApplication.translate("MainWindow", u"20pF", None))
         self.plot_cdet_comboBox.setItemText(3, QCoreApplication.translate("MainWindow", u"40pF", None))
 
-        self.plot_test_name_comboBox.setItemText(0, QCoreApplication.translate("MainWindow", u"RAW", None))
-        self.plot_test_name_comboBox.setItemText(1, QCoreApplication.translate("MainWindow", u"RMS_PEDESTAL", None))
-        self.plot_test_name_comboBox.setItemText(2, QCoreApplication.translate("MainWindow", u"CROSSTALK", None))
-        self.plot_test_name_comboBox.setItemText(3, QCoreApplication.translate("MainWindow", u"GAIN", None))
+        self.plot_test_name_comboBox.setItemText(0, QCoreApplication.translate("MainWindow", u"raw", None))
+        self.plot_test_name_comboBox.setItemText(1, QCoreApplication.translate("MainWindow", u"rms_pedestal", None))
+        self.plot_test_name_comboBox.setItemText(2, QCoreApplication.translate("MainWindow", u"crosstalk", None))
+        self.plot_test_name_comboBox.setItemText(3, QCoreApplication.translate("MainWindow", u"gain", None))
 
         self.plot_file_exist_label.setText(QCoreApplication.translate("MainWindow", u"File Exist / Not Exist", None))
         self.show_waveform_btn.setText(QCoreApplication.translate("MainWindow", u"Show WaveForm", None))

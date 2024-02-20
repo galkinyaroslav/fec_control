@@ -1539,22 +1539,22 @@
            </property>
            <item>
             <property name="text">
-             <string>RAW</string>
+             <string>raw</string>
             </property>
            </item>
            <item>
             <property name="text">
-             <string>RMS_PEDESTAL</string>
+             <string>rms_pedestal</string>
             </property>
            </item>
            <item>
             <property name="text">
-             <string>CROSSTALK</string>
+             <string>crosstalk</string>
             </property>
            </item>
            <item>
             <property name="text">
-             <string>GAIN</string>
+             <string>gain</string>
             </property>
            </item>
           </widget>
