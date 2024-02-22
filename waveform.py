@@ -5,56 +5,33 @@ from matplotlib import pyplot as plt
 
 
 class NWaveForm:
-    def __init__(self, full_filename: str = None, raw_data: list[bytes] = None):
+    def __init__(self, full_filename: str = None, raw_data: list[bytes] = None, event: int = -1):
+        self.__event = event
         if full_filename:
-            # separators = r'[/.-]'
             self.__full_filename = full_filename
-            # self.__filename = full_filename.split('/')[-1]
-            # parameters_list = re.split(separators, full_filename)
-            # self.__card_number = parameters_list[4]
-            # self.__cdet = parameters_list[0]
-            # self.__test_name = parameters_list[2]
-            # self.__run_number = parameters_list[3]
             self.__raw_data = self.get_raw_data()
             self.__all_data = self.convert_data_to_int()
             self.__waveform_data = self.__all_data[:, :, 5:]
             self.__rms = self.get_rms()
         if raw_data:
-            # separators = r'[/.-]'
             self.__full_filename = None
-            # self.__filename = None
-            # # parameters_list = re.split(separators, full_filename)
-            # self.__run_number = None
-            # self.__card_number = None
-            # self.__test_name = None
             self.__raw_data = np.array([[int(data, 16) for data in raw_data]],)
         self.__all_data = self.convert_data_to_int()
         self.__waveform_data = self.__all_data[:, :, 5:]
         self.__rms = self.get_rms()
         self.__max_value = self.get_max_value()
 
-
     @property
     def max_value(self):
         return self.__max_value
+
     @property
     def all_data(self):
         return self.__all_data
+
     @property
     def full_filename(self):
         return self.__full_filename
-
-    # @property
-    # def filename(self):
-    #     return self.__filename
-    #
-    # @property
-    # def card_number(self):
-    #     return self.__card_number
-    #
-    # @property
-    # def test_name(self):
-    #     return self.__test_name
 
     @property
     def raw_data(self):
@@ -75,12 +52,24 @@ class NWaveForm:
     def get_raw_data(self) -> np.ndarray:
         with open(self.__full_filename, 'r') as file:
             lines = file.readlines()
-        data_list = []
-        for line in lines:
-            hex_values = line.strip().split()
-            decimal_values = [int(value, 16) for value in hex_values]
-            data_list.append(decimal_values)
-        return np.array(data_list)
+            print(f'{len(lines)=}')
+        match self.__event:
+            case -1:
+                data_list = []
+                for line in lines:
+                    hex_values = line.strip().split()
+                    decimal_values = [int(value, 16) for value in hex_values]
+                    data_list.append(decimal_values)
+                return np.array(data_list)
+
+            case x if 0 <= x < len(lines):
+                data_list = []
+                hex_values = lines[x].strip().split()
+                decimal_values = [int(value, 16) for value in hex_values]
+                data_list.append(decimal_values)
+                return np.array(data_list)
+            case _:
+                raise ValueError(f'{self.__event=} is not appropriate value')
 
     def check_data(self) -> bool:
         second_column = self.__all_data[:, :, 1]
@@ -144,8 +133,8 @@ class NWaveForm:
 if __name__ == '__main__':
     np.set_printoptions(linewidth=1000, threshold=np.inf)
 
-    filename = 'runs/385/raw/52-385.txt'
-    a = NWaveForm(full_filename=filename)
+    filename = 'runs/454/10pF/raw/1-454.txt'
+    a = NWaveForm(full_filename=filename, event=0)
     print(a.full_filename)
     print(a.raw_data.shape)
 

@@ -10,13 +10,13 @@ class Worker(QRunnable):
         super().__init__()
         self.args = args
         self.kwargs = kwargs
-        self.fec_func = kwargs['fec_func']
-        self.kwargs.pop('fec_func')
+        self.run_func = kwargs['run_func']
+        self.kwargs.pop('run_func')
         # self.command = command
         self.signals = WorkerSignals()
         # print(f'{args=},{kwargs=}')
 
     @Slot()
     def run(self):
-        result = self.fec_func(*self.args, **self.kwargs)
-        self.signals.finished.emit(self.fec_func, result, self.kwargs)
+        result = self.run_func(*self.args, **self.kwargs)
+        self.signals.finished.emit(self.run_func, result, self.kwargs)

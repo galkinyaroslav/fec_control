@@ -67,8 +67,8 @@ class WaveFormWindow(QMainWindow):
         widget.setLayout(layout)
         self.setCentralWidget(widget)
 
-    def update_plot(self, filename):
-        a = NWaveForm(full_filename=filename)
+    def update_plot(self, filename, event: int = -1):
+        a = NWaveForm(full_filename=filename, event=event)
         self.waveform_canvas.figure.suptitle(f'WaveForm from {filename}')
 
         for row in range(64):
@@ -99,11 +99,11 @@ class RMSWindow(QMainWindow):
         widget.setLayout(layout)
         self.setCentralWidget(widget)
 
-    def update_plot(self, filename):
+    def update_plot(self, filename, event: int = -1):
         self.rms_canvas.figure.suptitle(f'RMS from {filename}')
+        a = NWaveForm(full_filename=filename, event=event)
 
         for row in range(64):
-            a = NWaveForm(full_filename=filename)
             self.rms_canvas.figure.axes[0].cla()
             self.rms_canvas.figure.axes[0].set_ylim(0, a.rms.max()*1.2)
             self.rms_canvas.figure.axes[0].set_xlabel('Channel number')

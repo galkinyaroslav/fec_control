@@ -26,7 +26,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(800, 667)
+        MainWindow.resize(800, 628)
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -397,7 +397,7 @@ class Ui_MainWindow(object):
         self.gain_lastrun_label.setAlignment(Qt.AlignCenter)
         self.gain_lastrun_label.setWordWrap(True)
 
-        self.verticalLayout_5.addWidget(self.gain_lastrun_label, 0, Qt.AlignHCenter)
+        self.verticalLayout_5.addWidget(self.gain_lastrun_label)
 
 
         self.gridLayout_3.addWidget(self.frame_4, 3, 1, 1, 1)
@@ -454,7 +454,7 @@ class Ui_MainWindow(object):
         self.crosstalk_last_run_label.setAlignment(Qt.AlignCenter)
         self.crosstalk_last_run_label.setWordWrap(True)
 
-        self.verticalLayout_4.addWidget(self.crosstalk_last_run_label, 0, Qt.AlignHCenter)
+        self.verticalLayout_4.addWidget(self.crosstalk_last_run_label)
 
 
         self.gridLayout_3.addWidget(self.frame_2, 2, 1, 1, 1)
@@ -503,7 +503,7 @@ class Ui_MainWindow(object):
         self.pedestal_lastrun_label.setAlignment(Qt.AlignCenter)
         self.pedestal_lastrun_label.setWordWrap(True)
 
-        self.verticalLayout_6.addWidget(self.pedestal_lastrun_label, 0, Qt.AlignHCenter)
+        self.verticalLayout_6.addWidget(self.pedestal_lastrun_label)
 
 
         self.gridLayout_3.addWidget(self.frame_5, 5, 1, 1, 1)
@@ -788,13 +788,28 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_8.addWidget(self.line_9)
 
+        self.horizontalLayout_2 = QHBoxLayout()
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.raw_btn = QPushButton(self.frame_7)
         self.raw_btn.setObjectName(u"raw_btn")
         sizePolicy2.setHeightForWidth(self.raw_btn.sizePolicy().hasHeightForWidth())
         self.raw_btn.setSizePolicy(sizePolicy2)
         self.raw_btn.setMinimumSize(QSize(160, 20))
 
-        self.verticalLayout_8.addWidget(self.raw_btn)
+        self.horizontalLayout_2.addWidget(self.raw_btn)
+
+        self.raw_runs_spinBox = QSpinBox(self.frame_7)
+        self.raw_runs_spinBox.setObjectName(u"raw_runs_spinBox")
+        sizePolicy.setHeightForWidth(self.raw_runs_spinBox.sizePolicy().hasHeightForWidth())
+        self.raw_runs_spinBox.setSizePolicy(sizePolicy)
+        self.raw_runs_spinBox.setMinimumSize(QSize(0, 20))
+        self.raw_runs_spinBox.setMinimum(1)
+        self.raw_runs_spinBox.setMaximum(1000)
+
+        self.horizontalLayout_2.addWidget(self.raw_runs_spinBox)
+
+
+        self.verticalLayout_8.addLayout(self.horizontalLayout_2)
 
         self.raw_lastrun_label = QLabel(self.frame_7)
         self.raw_lastrun_label.setObjectName(u"raw_lastrun_label")
@@ -804,7 +819,7 @@ class Ui_MainWindow(object):
         self.raw_lastrun_label.setAlignment(Qt.AlignCenter)
         self.raw_lastrun_label.setWordWrap(True)
 
-        self.verticalLayout_8.addWidget(self.raw_lastrun_label, 0, Qt.AlignHCenter)
+        self.verticalLayout_8.addWidget(self.raw_lastrun_label)
 
 
         self.gridLayout_3.addWidget(self.frame_7, 1, 1, 1, 1)
@@ -871,7 +886,7 @@ class Ui_MainWindow(object):
         self.plot_card_number_lineEdit.setText("")
         self.plot_card_number_lineEdit.setPlaceholderText(QCoreApplication.translate("MainWindow", u"385", None))
         self.plot_event_number_lineEdit.setText("")
-        self.plot_event_number_lineEdit.setPlaceholderText(QCoreApplication.translate("MainWindow", u"0", None))
+        self.plot_event_number_lineEdit.setPlaceholderText(QCoreApplication.translate("MainWindow", u"-1", None))
         self.plot_run_number_label.setText(QCoreApplication.translate("MainWindow", u"Run", None))
         self.plot_run_number_lineEdit.setText("")
         self.plot_run_number_lineEdit.setPlaceholderText(QCoreApplication.translate("MainWindow", u"1", None))
