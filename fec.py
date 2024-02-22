@@ -146,7 +146,7 @@ class FEC():
         # oscmd('echo ".">toConsole.txt');
         #       0       1     2       3      4      5      6      7      8     9      10     11     12     13     14     15
         #    |......|......|......|......|......|......|......|......|......|......|......|......|......|......|......|......|......|
-        header = "\n    |  T      1.7Vi    1.1Vc5   1.25Vd   mA2_S0   mA1_S0   1.1Vr    1.25Va   mA0_S0    Tsam    1.25Va   mA3_S1   1.1Vr    mA4_S1   mA5_S1   1.25Va \n"
+        header = "\n    |  T      1.7Vi    1.1Vc5   1.25Vd   mA2_S0   mA1_S0    1.1Vr    1.25Va   mA0_S0    Tsam    1.25Va   mA3_S1   1.1Vr    mA4_S1    mA5_S1   1.25Va \n"
         color_print(header)  # print hd
         # svnarr = np.ndarray(shape=(n, 16))
         svnarr = np.zeros(shape=(n, 16))
@@ -231,7 +231,7 @@ class FEC():
             nrun = 1
             while runs_number:
                 received_data = self.getff(link=link)
-                print(f'{received_data=}')
+                # print(f'{received_data=}')
                 print(f'Run #{nrun}, TTH>>{received_data[-3].decode()}\n')
                 wform = NWaveForm(raw_data=received_data[1:-34])
                 if not wform.check_data() and data_filter:
@@ -250,7 +250,7 @@ class FEC():
         trstat_data = self.ttok(f'trstat {link}').split(b'  ')
         try:
             cid = trstat_data[2].decode().split(' ')[1]
-            print(trstat_data)
+            # print(trstat_data)
             integrator = 3
             while integrator != 0:
                 if cid == '0x00000000':
@@ -322,7 +322,7 @@ class FEC():
             self.ttok(f'wmsk 0xffffffff;car {link}')
             self.power_on(link=link)
 
-    def scan_card_pll(self, link: int = 0, runs: int = 1) -> dict:
+    def scan_card_pll(self, link: int = 0) -> dict:
         # self.ttok(f'car {link}')
         # self.get_trstat(link)
         # card_number = self.get_card_number(link)
