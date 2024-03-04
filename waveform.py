@@ -167,7 +167,7 @@ class NWaveForm:
                                            f't={sampa.t:.3f}\n'
                                            f'tau={sampa.tau:.3f}\n'
                                            f'a={sampa.a:.0f}\n',
-                                           xy=(0.73, 0.65), xycoords='axes fraction',
+                                           xy=(0.05, 0.3), xycoords='axes fraction',
                                            bbox=bbox)
                 axs[row, col].plot(data_to_plot, 'o', )
                 axs[row, col].set_ylim(0)
