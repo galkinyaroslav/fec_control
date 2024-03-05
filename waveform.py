@@ -177,6 +177,49 @@ class NWaveForm:
         plt.show()
         # plt.savefig(f'{path}/34-454_waveform_unconnected.png')
 
+    def make_fitted_amplitude_all_events(self):
+        num_events = self.all_data.shape[0]
+        num_channels = self.all_data.shape[1]
+        amplitude = np.zeros((num_channels, num_events))
+
+        for channel in range(num_channels):
+            for event in range(num_events):
+                # print(f'{self.__waveform_data[event]}')
+                sampafit = SampaFit(x=np.arange(len(self.__waveform_data[event][channel])),
+                                    y=self.__waveform_data[event][channel])
+                # a,t,tau,bl = sampafit.diff_minimization()
+                # amplitude[channel, event] = a/np.exp(4)
+
+                amplitude[channel, event] = sampafit.amplitude
+                # print(f'{amplitude[event, channel]=}')
+        return amplitude
+
+    def plot_fitted_amplitude(self):
+        px = 1 / plt.rcParams['figure.dpi']  # pixel in inches
+        amplitude = self.make_fitted_amplitude_all_events()
+        fig, axs = plt.subplots(8, 8, figsize=(3840 * px, 2160 * px), constrained_layout=True)
+        fig.suptitle(f'Average amplitude from file {self.__full_filename}')
+        for row in range(8):
+            for col in range(8):
+                channel = 8 * row + col
+                y = amplitude[channel]
+                axs[row, col].plot(y, 'ob', label='Data')
+
+                axs[row, col].set_ylim(0, round(y.max()*1.1, -2))
+                axs[row, col].set_xlabel('Events')
+                axs[row, col].set_ylabel('ADC channel')
+                axs[row, col].set_title(f'CH-{8 * row + col} Amplitudes')
+
+                bbox = dict(boxstyle='square', facecolor='white', edgecolor='black', )
+                axs[row, col].annotate(f'Std={y.std():.2f}\n'
+                                       f'Mean={y.mean():.1f}\n'
+                                       f'Max={y.max():.1f}\n'
+                                       f'Min={y.min():.1f}',
+                                       xy=(0.05, 0.1), xycoords='axes fraction',
+                                       bbox=bbox)
+        plt.show()
+
+
     def make_spline(self, event, channel) -> SplineData:
         y = self.__waveform_data[event][channel]
         y_len = len(self.__waveform_data[event][channel])
@@ -185,11 +228,7 @@ class NWaveForm:
 
         x_spline = np.linspace(15, y_len - 8, (y_len - 15 - 8) * 100 + 1)
         y_spline = spline(x_spline)
-        # print(f'{len(x_spline)=}')
-        # print(f'{len(y_spline)=}')
         y_max = y_spline[200:600].max()
-        # print(f'{y_spline=}')
-        # print(f'{y_max=}')
         argmax = y_spline[200:600].argmax() + 200
         baseline_10 = y[0:10].mean()
         return SplineData(x=x_spline, y=y_spline, max_coord=MaxCoords(x_spline[argmax], y_max),
@@ -228,7 +267,7 @@ class NWaveForm:
                 axs[row, col].set_title(f'CH-{8 * row + col} Amplitudes')
 
                 bbox = dict(boxstyle='square', facecolor='white', edgecolor='black', )
-                axs[row, col].annotate(f'Amplitude={y.mean():.1f}\n'
+                axs[row, col].annotate(f'Mean={y.mean():.1f}\n'
                                        f'Max={y.max():.1f}\n'
                                        f'Min={y.min():.1f}',
                                        xy=(0.05, 0.1), xycoords='axes fraction',
@@ -294,14 +333,14 @@ if __name__ == '__main__':
     np.set_printoptions(linewidth=1000, threshold=np.inf)
 
     filename = 'runs/454/0pF/raw/58-454.txt'
-    a = NWaveForm(full_filename=filename, event=0)
+    a = NWaveForm(full_filename=filename, event=-1)
     # print(a.full_filename)
     # print(a.all_data.shape[0])
     idx = 0
     for ch in a.all_data[0]:
         print(f'ch{idx}={ch}')
         idx += 1
-    a.plot_fitted_waveform()
+    # a.plot_fitted_waveform()
 
     # print(a.waveform_data)
     # print(a.check_data())
@@ -312,9 +351,10 @@ if __name__ == '__main__':
 
     # a.plot_waveform()
     # a.plot_waveform_with_spline(0)
-    a = NWaveForm(full_filename=filename, event=3)
+    # a = NWaveForm(full_filename=filename, event=-1)
 
-    a.plot_fitted_waveform()
+    # a.plot_fitted_waveform()
+    a.plot_fitted_amplitude()
     # a.plot_spline_data()
     #
     # a.plot_rms()
