@@ -1,7 +1,4 @@
-import time
-
 import pyvisa
-import re
 
 
 class AFG3152C():
@@ -81,10 +78,11 @@ class AFG3152C():
 
     def set_initial_parameters(self):
         self.rst()
+
         self.set_function('PULS')
 
-        self.set_pulse_period(period=1, units='ms')
-        self.set_pulse_width(width=5, units='us')
+        self.set_pulse_period(period=5, units='us')
+        self.set_pulse_width(width=4, units='us')
         self.set_pulse_tran(lead=3, trail=3, units='ns')
 
         self.set_volt_low(0)
@@ -93,7 +91,7 @@ class AFG3152C():
         self.set_burst_state('ON')
         self.set_burst_mode('TRIG')
         self.set_burst_ncycle(cycles=1)
-        self.set_burst_triggerdelay(tdelay=1.5, units='us')
+        self.set_burst_triggerdelay(tdelay=2, units='us')
 
         self.set_trigger_source('EXT')
 
@@ -101,8 +99,8 @@ class AFG3152C():
 
         self.set_function('PULS', channel=2)
 
-        self.set_pulse_period(period=1, units='ms', channel=2)
-        self.set_pulse_width(width=5, units='us', channel=2)
+        self.set_pulse_period(period=5, units='us', channel=2)
+        self.set_pulse_width(width=4, units='us', channel=2)
         self.set_pulse_tran(lead=3, trail=3, units='ns', channel=2)
 
         self.set_volt_low(0, channel=2)
@@ -111,7 +109,7 @@ class AFG3152C():
         self.set_burst_state('ON', channel=2)
         self.set_burst_mode('TRIG', channel=2)
         self.set_burst_ncycle(cycles=1, channel=2)
-        self.set_burst_triggerdelay(tdelay=1.5, units='us', channel=2)
+        self.set_burst_triggerdelay(tdelay=2, units='us', channel=2)
 
         self.set_trigger_source('EXT', channel=2)
 
@@ -120,11 +118,17 @@ class AFG3152C():
 
 if __name__ == '__main__':
     import numpy
+    import time
+
     afg = AFG3152C()
     afg.rst()
     time.sleep(1)
     afg.set_initial_parameters()
     print(afg.get_volt_amplitude())
-    for i in numpy.linspace(0.1, 1, 10):
+    afg.set_volt_low(low=0)
+
+    for i in numpy.linspace(0.02, 0.1, 10):
+        # afg.set_volt_amplitude(amplitude=i)
+        # afg.set_volt_offset(offset=0.04)
         afg.set_volt_high(high=i)
         time.sleep(0.3)

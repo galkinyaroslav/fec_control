@@ -357,16 +357,18 @@ if __name__ == "__main__":
 
     try:
         np.set_printoptions(linewidth=1000, threshold=np.inf)
-        link = 31
-        f.ttok(f'wmsk 0xffffffff')
+        # link = 31
+        # f.ttok(f'wmsk 0xffffffff')
         # f.get_trstat(link=link)
         # f.ini(link=link)
         # asd = f.adcd(link=link, n=10)
         # f.getffw(link=link, runs_number=1, single=True)
-
+        f.get_trstat_all()
+        f.ini_all()
+        f.get_tts_tth_all()
         # print(f'{asd=}')
 
-        print(f.get_tts_tth(link=link))
+        # print(f.get_tts_tth(link=link))
 
     except Exception as e:
         print(e)

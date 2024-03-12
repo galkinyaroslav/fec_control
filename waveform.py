@@ -1,5 +1,4 @@
 import os
-import re
 from collections import namedtuple
 from dataclasses import dataclass
 
@@ -218,7 +217,6 @@ class NWaveForm:
                                        xy=(0.05, 0.1), xycoords='axes fraction',
                                        bbox=bbox)
         plt.show()
-
 
     def make_spline(self, event, channel) -> SplineData:
         y = self.__waveform_data[event][channel]

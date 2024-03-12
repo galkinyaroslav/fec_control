@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>628</height>
+    <height>643</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -774,7 +774,7 @@
          <property name="minimumSize">
           <size>
            <width>60</width>
-           <height>20</height>
+           <height>40</height>
           </size>
          </property>
          <property name="text">
@@ -854,7 +854,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="crosstalk_even_btn">
+        <widget class="QPushButton" name="crosstalk_btn">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -868,31 +868,12 @@
           </size>
          </property>
          <property name="text">
-          <string>EVEN</string>
+          <string>CROSSTALK</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="crosstalk_odd_btn">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>160</width>
-           <height>20</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>ODD</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="crosstalk_last_run_label">
+        <widget class="QLabel" name="crosstalk_lastrun_label">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
            <horstretch>0</horstretch>
@@ -902,7 +883,7 @@
          <property name="minimumSize">
           <size>
            <width>60</width>
-           <height>20</height>
+           <height>40</height>
           </size>
          </property>
          <property name="text">
@@ -1011,7 +992,7 @@
          <property name="minimumSize">
           <size>
            <width>60</width>
-           <height>20</height>
+           <height>40</height>
           </size>
          </property>
          <property name="text">
@@ -1255,10 +1236,10 @@
             </size>
            </property>
            <property name="text">
-            <string/>
+            <string>454</string>
            </property>
            <property name="placeholderText">
-            <string>385</string>
+            <string>454</string>
            </property>
           </widget>
          </item>
@@ -1277,7 +1258,7 @@
             </size>
            </property>
            <property name="text">
-            <string/>
+            <string>-1</string>
            </property>
            <property name="placeholderText">
             <string>-1</string>
@@ -1318,7 +1299,7 @@
             </size>
            </property>
            <property name="text">
-            <string/>
+            <string>1</string>
            </property>
            <property name="placeholderText">
             <string>1</string>
@@ -1398,12 +1379,12 @@
            </property>
            <item>
             <property name="text">
-             <string>ODD</string>
+             <string>odd</string>
             </property>
            </item>
            <item>
             <property name="text">
-             <string>EVEN</string>
+             <string>even</string>
             </property>
            </item>
           </widget>
@@ -1442,10 +1423,10 @@
             </size>
            </property>
            <property name="text">
-            <string/>
+            <string>0.02</string>
            </property>
            <property name="placeholderText">
-            <string>100</string>
+            <string>0.5</string>
            </property>
           </widget>
          </item>
@@ -1764,7 +1745,7 @@
          <property name="minimumSize">
           <size>
            <width>60</width>
-           <height>20</height>
+           <height>40</height>
           </size>
          </property>
          <property name="text">
