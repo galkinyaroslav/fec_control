@@ -1,3 +1,4 @@
+import datetime
 import enum
 import json
 import os
@@ -344,16 +345,46 @@ class FEC():
         print(int(response[9]), int(response[18]))
         return True if (int(response[9]) | int(response[18])) <= 1 else False
 
+def acdc_all_writable():
+    # ACDC ALL WITH WRITING TO FILE
+    import openpyxl
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'fec temperatures'
+
+    path = './arkolab'
+    if not os.path.exists(path):
+        os.makedirs(path)
+    time_now = datetime.datetime.now()
+    try:
+        for i in range(31):
+            print(f'Link={i}')
+            data = narrow.adcd(link=i, n=5)
+            line = [d[0] for d in data] + [d[9] for d in data]
+            # line =
+            if i == 0:
+                ws.append(['fpga' for _ in range(len(data))] + ['sampa' for _ in range(len(data))])
+            ws.append(line)
+    except Exception as e:
+        print(e)
+    finally:
+        # with open(f'{path}/{time_now}.csv', 'ax') as f:
+        wb.save(f'{path}/{str(time_now)}.xlsx')
+        wb.close()
 
 if __name__ == "__main__":
+    # import openpixel
     main_start = perf_counter()
-    host = '192.168.1.235'
+    # host_wide = '192.168.1.191'
+    host_narrow = '192.168.1.235'
+
     port = 30
     # tln = telnetlib.Telnet(timeout=10)
     # tln.open(host=host, port=port)
     # out = tln.read_until('return:\n\r'.encode('utf-8'), timeout=10)
     # print(out.decode('utf-8'))
-    f = FEC(host=host, port=port)
+    # wide = FEC(host=host_wide, port=port)
+    narrow = FEC(host=host_narrow, port=port)
 
     try:
         np.set_printoptions(linewidth=1000, threshold=np.inf)
@@ -363,9 +394,23 @@ if __name__ == "__main__":
         # f.ini(link=link)
         # asd = f.adcd(link=link, n=10)
         # f.getffw(link=link, runs_number=1, single=True)
-        f.get_trstat_all()
-        f.ini_all()
-        f.get_tts_tth_all()
+
+        # acdc_all_writable()
+
+        # wide.get_trstat_all()
+        # wide.ini_all()
+        # wide.get_tts_tth_all()
+        # narrow.get_trstat_all()
+        # narrow.ini_all()
+        # narrow.get_tts_tth_all()
+        narrow.get_tts_tth(0)
+
+
+        for i in range(31):
+            # wide.adcd(link=i, n=1)
+            narrow.adcd(link=i, n=1)
+
+
         # print(f'{asd=}')
 
         # print(f.get_tts_tth(link=link))
@@ -375,7 +420,9 @@ if __name__ == "__main__":
         print(traceback.format_exc())
 
     finally:
-        f.tln.write('!\r\n'.encode('utf-8'))
-        f.tln.close()
+        # wide.tln.write('!\r\n'.encode('utf-8'))
+        # wide.tln.close()
+        narrow.tln.write('!\r\n'.encode('utf-8'))
+        narrow.tln.close()
         main_stop = perf_counter()
         print(f'main_time={main_stop - main_start}')
