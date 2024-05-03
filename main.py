@@ -38,7 +38,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.rms_window = RMSWindow()
 
         # self.__plot_card_number = self.plot_card_number_lineEdit.placeholderText()
-        # self.__plot_cdet = self.plot_cdet_comboBox.itemText(self.plot_cdet_comboBox.currentIndex())
+        self.__plot_cdet = self.plot_cdet_comboBox.itemText(self.plot_cdet_comboBox.currentIndex())
         # self.__plot_test_name = self.plot_test_name_comboBox.itemText(self.plot_test_name_comboBox.currentIndex())
         # self.__plot_parity = self.plot_parity_comboBox.itemText(self.plot_parity_comboBox.currentIndex())
         # self.__plot_run_number = self.plot_run_number_lineEdit.placeholderText()
@@ -117,20 +117,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                                                            fecard=self.fe_card,
                                                            ))
 
-        # CROSSTALK EVEN
-        self.crosstalk_btn.clicked.connect(lambda: self.execute(run_func=self.crosstalk_fc,
-                                                                fecard=self.fe_card,
-                                                                gen=self.gen,
-                                                                data_filter=True,
-                                                                link=self.__link))
+        # # CROSSTALK EVEN
+        # self.crosstalk_btn.clicked.connect(lambda: self.execute(run_func=self.crosstalk_fc,
+        #                                                         fecard=self.fe_card,
+        #                                                         gen=self.gen,
+        #                                                         data_filter=True,
+        #                                                         link=self.__link))
 
-        # GAIN
-        self.gain_btn.clicked.connect(lambda: self.execute(run_func=self.gain_fc,
-                                                           fecard=self.fe_card,
-                                                           gen=self.gen,
-                                                           data_filter=True,
-                                                           link=self.__link
-                                                           ))
+        # GAIN + CROSSTALK
+        self.gain_cross_even_btn.clicked.connect(lambda: self.execute(run_func=self.gain_cross_fc,
+                                                                      fecard=self.fe_card,
+                                                                      gen=self.gen,
+                                                                      data_filter=True,
+                                                                      link=self.__link,
+                                                                      parity='even',
+                                                                      ))
+        self.gain_cross_odd_btn.clicked.connect(lambda: self.execute(run_func=self.gain_cross_fc,
+                                                                     fecard=self.fe_card,
+                                                                     gen=self.gen,
+                                                                     data_filter=True,
+                                                                     link=self.__link,
+                                                                     parity='odd',
+                                                                     ))
         # RMS_PEDESTAL
         self.pedestal_btn.clicked.connect(lambda: self.execute(run_func=self.rms_pedestal_fc,
                                                                fecard=self.fe_card,
@@ -163,6 +171,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @Slot(object, object, object)
     def onTelnetFinished(self, fec_func, result, *args, **kwargs):
         print(f'{fec_func.__name__} is finished\n')
+        print(f'{args=}, {kwargs=}')
         match fec_func.__name__:
             case 'rms_pedestal_fc':
                 file_number = self.get_file_number(TestsName.RMS_PEDESTAL)
@@ -183,31 +192,34 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.pedestal_lastrun_label.setText(f'{fullpath}')
                 self.plot_run_number_lineEdit.setText(str(file_number))
                 self.plot_test_name_comboBox.setCurrentIndex(self.plot_test_name_comboBox.findText('rms_pedestal'))
-            case 'crosstalk_fc':
-                file_number = self.get_file_number(TestsName.CROSSTALK)
-                vatfilename = f'{file_number}-{self.__card_number}.vat'
-                path = self.get_path(test_name=TestsName.CROSSTALK)
-                vatfullpath = path + vatfilename
-                header = ['T', 'Vi1_7', 'Vc5_1_1', 'Vd1_25', 'mA2_S0', 'mA1_S0', 'Vr1_1_1', 'Va1_1_25', 'mA0_S0',
-                          'Tsam', 'Va2_1_25', 'mA3_S1', 'Vr2_1_1', 'mA4_S1', 'mA5_S1', 'Va3_1_25']
-                np.savetxt(vatfullpath, result['adcd'], delimiter=' ', fmt='%.2f', header=f'{' '.join(header)}')
-                for gen_channel in range(1, 3, 1):
-                    parity = 'even' if gen_channel == 1 else 'odd'
-                    filename = f'{file_number}-{self.__card_number}-{parity}-2pF.txt'
-                    fullpath = path + filename
+            # case 'crosstalk_fc':
+            #     file_number = self.get_file_number(TestsName.CROSSTALK)
+            #     vatfilename = f'{file_number}-{self.__card_number}.vat'
+            #     path = self.get_path(test_name=TestsName.CROSSTALK)
+            #     vatfullpath = path + vatfilename
+            #     header = ['T', 'Vi1_7', 'Vc5_1_1', 'Vd1_25', 'mA2_S0', 'mA1_S0', 'Vr1_1_1', 'Va1_1_25', 'mA0_S0',
+            #               'Tsam', 'Va2_1_25', 'mA3_S1', 'Vr2_1_1', 'mA4_S1', 'mA5_S1', 'Va3_1_25']
+            #     np.savetxt(vatfullpath, result['adcd'], delimiter=' ', fmt='%.2f', header=f'{' '.join(header)}')
+            #     for gen_channel in range(1, 3, 1):
+            #         parity = 'even' if gen_channel == 1 else 'odd'
+            #         filename = f'{file_number}-{self.__card_number}-{parity}-2pF.txt'
+            #         fullpath = path + filename
+            #
+            #         if not os.path.exists(path):
+            #             os.makedirs(path)
+            #         with open(fullpath, 'w') as f:
+            #             for line in result['ff'][gen_channel - 1]:
+            #                 f.write((b' '.join(b'0x' + word for word in line) + b'\n').decode())
+            #
+            #         self.crosstalk_lastrun_label.setText(f'{fullpath}')
+            #         self.plot_run_number_lineEdit.setText(str(file_number))
+            #         self.plot_test_name_comboBox.setCurrentIndex(self.plot_test_name_comboBox.findText('crosstalk'))
 
-                    if not os.path.exists(path):
-                        os.makedirs(path)
-                    with open(fullpath, 'w') as f:
-                        for line in result['ff'][gen_channel - 1]:
-                            f.write((b' '.join(b'0x' + word for word in line) + b'\n').decode())
-
-                    self.crosstalk_lastrun_label.setText(f'{fullpath}')
-                    self.plot_run_number_lineEdit.setText(str(file_number))
-                    self.plot_test_name_comboBox.setCurrentIndex(self.plot_test_name_comboBox.findText('crosstalk'))
-
-            case 'gain_fc':
-                ampl_range = np.linspace(0.02, 0.6, 30)
+            case 'gain_cross_fc':
+                ampl_range = np.concatenate([np.linspace(0.02, 0.1, 9),
+                                             np.linspace(0.15, 0.4, 6),
+                                             np.linspace(0.45, 0.6, 16),
+                                             [2, ]])
                 file_number = self.get_file_number(TestsName.GAIN)
                 vatfilename = f'{file_number}-{self.__card_number}-2pF.vat'
                 path = self.get_path(test_name=TestsName.GAIN)
@@ -217,7 +229,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 np.savetxt(vatfullpath, result['adcd'], delimiter=' ', fmt='%.2f', header=f'{' '.join(header)}')
                 for ampl in range(len(ampl_range)):
 
-                    filename = f'{file_number}-{self.__card_number}-2pF-{round(ampl_range[ampl], 2)}V.txt'
+                    filename = f'{file_number}-{self.__card_number}-{args[0]['parity']}-2pF-{round(ampl_range[ampl], 2)}V.txt'
                     fullpath = path + filename
 
                     if not os.path.exists(path):
@@ -317,9 +329,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             case TestsName.RAW.value | TestsName.RMS_PEDESTAL.value:
                 return numfile + 1
             case TestsName.GAIN.value:
-                return int(-(numfile // -25)) + 1 if numfile else 1  # 25 - len(input amplitudes)
-            case TestsName.CROSSTALK.value:
-                return int(-(numfile // -2)) + 1 if numfile else 1  # 2 for odd and even
+                return int(-(numfile // -32)) + 1 if numfile else 1  # 25 - len(input amplitudes)
+            # case TestsName.CROSSTALK.value:
+            #     return int(-(numfile // -2)) + 1 if numfile else 1  # 2 for odd and even
             case _:
                 raise ValueError(f'{test_name.value} is not in TestsName')
 
@@ -386,20 +398,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         return {'adcd': adcd, 'ff': ff}
 
-    def gain_fc(self, fecard, gen, link: int = 31, data_filter: bool = True):
+    def gain_cross_fc(self, fecard, gen, link: int = 31, parity: str = 'even', data_filter: bool = True):
         adcd = fecard.adcd(n=3, link=link)
         ff = []
-        ampl_range = np.linspace(0.02, 0.6, 30)
-
+        ampl_range = np.concatenate([np.linspace(0.02, 0.1, 9),
+                                     np.linspace(0.15, 0.4, 6),
+                                     np.linspace(0.45, 0.6, 16),
+                                     [2,]])
+        gen_channel = 1 if parity == 'even' else 2
         for ampl in range(len(ampl_range)):
             runs_number = 10
             print(f'{ampl=}')
-            gen.set_volt_low(low=0)
-            gen.set_volt_high(high=round(ampl_range[ampl], 2))
-            gen.set_volt_low(low=0, channel=2)
-            gen.set_volt_high(high=round(ampl_range[ampl], 2), channel=2)
-            gen.set_output_state('ON', channel=2)
-            gen.set_output_state('ON', channel=1)
+            gen.set_volt_low(low=0, channel=gen_channel)
+            gen.set_volt_high(high=round(ampl_range[ampl], 2), channel=gen_channel)
+            # gen.set_volt_low(low=0, channel=2)
+            # gen.set_volt_high(high=round(ampl_range[ampl], 2), channel=2)
+            gen.set_output_state('ON', channel=gen_channel)
+            gen.set_output_state('OFF', channel=2 if parity == 'even' else 1)
             time.sleep(1)
             ff.append([])
             nrun = 1
@@ -480,9 +495,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     #     self.__plot_cdet = self.plot_cdet_comboBox.itemText(idx)
 
     def enc_cdet_activate(self, idx):
-        # self.__enc_cdet = self.enc_cdet_comboBox.itemText(idx)
+        self.__enc_cdet = self.enc_cdet_comboBox.itemText(idx)
         self.plot_cdet_comboBox.setCurrentIndex(idx)
-        # self.__plot_cdet = self.enc_cdet_comboBox.itemText(idx)
+        self.__plot_cdet = self.enc_cdet_comboBox.itemText(idx)
 
     def plot_test_name_handler(self):
         match self.plot_test_name_comboBox.currentText():
@@ -491,7 +506,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             case 'crosstalk':
                 return f'{self.plot_run_number_lineEdit.text()}-{self.plot_card_number_lineEdit.text()}-{self.plot_parity_comboBox.currentText()}-2pF.txt'
             case 'gain':
-                return f'{self.plot_run_number_lineEdit.text()}-{self.plot_card_number_lineEdit.text()}-2pF-{self.plot_amplitude_lineEdit.text()}V.txt'
+                return f'{self.plot_run_number_lineEdit.text()}-{self.plot_card_number_lineEdit.text()}-{self.plot_parity_comboBox.currentText()}-2pF-{self.plot_amplitude_lineEdit.text()}V.txt'
             case _:
                 raise ValueError(f'No such test: {self.plot_test_name_comboBox.currentText()}')
                 # return None

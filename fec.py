@@ -345,7 +345,7 @@ class FEC():
         print(int(response[9]), int(response[18]))
         return True if (int(response[9]) | int(response[18])) <= 1 else False
 
-def acdc_all_writable():
+def adcd_all_writable():
     # ACDC ALL WITH WRITING TO FILE
     import openpyxl
     wb = openpyxl.Workbook()
@@ -369,7 +369,7 @@ def acdc_all_writable():
         print(e)
     finally:
         # with open(f'{path}/{time_now}.csv', 'ax') as f:
-        wb.save(f'{path}/{str(time_now)}.xlsx')
+        wb.save(f'{path}/{str(time_now)}_w.xlsx')
         wb.close()
 
 if __name__ == "__main__":
@@ -403,12 +403,15 @@ if __name__ == "__main__":
         # narrow.get_trstat_all()
         # narrow.ini_all()
         # narrow.get_tts_tth_all()
-        narrow.get_tts_tth(0)
+
+        adcd_all_writable()
+
+        # narrow.get_tts_tth(0)
 
 
-        for i in range(31):
-            # wide.adcd(link=i, n=1)
-            narrow.adcd(link=i, n=1)
+        # for i in range(31):
+        #     # wide.adcd(link=i, n=1)
+        #     narrow.adcd(link=i, n=1)
 
 
         # print(f'{asd=}')

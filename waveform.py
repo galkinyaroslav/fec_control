@@ -330,7 +330,7 @@ class NWaveForm:
 if __name__ == '__main__':
     np.set_printoptions(linewidth=1000, threshold=np.inf)
 
-    filename = 'runs/454/0pF/raw/58-454.txt'
+    filename = 'runs/385/raw/105-385.txt'
     a = NWaveForm(full_filename=filename, event=-1)
     # print(a.full_filename)
     # print(a.all_data.shape[0])
@@ -347,12 +347,12 @@ if __name__ == '__main__':
     # print(f'{a.get_max_value()=}')
     # print(f'{a.get_event_max_value(0)=}')
 
-    # a.plot_waveform()
+    a.plot_waveform()
     # a.plot_waveform_with_spline(0)
     # a = NWaveForm(full_filename=filename, event=-1)
 
     # a.plot_fitted_waveform()
-    a.plot_fitted_amplitude()
+    # a.plot_fitted_amplitude()
     # a.plot_spline_data()
     #
     # a.plot_rms()
