@@ -18,7 +18,7 @@ class SampaFit():
                         self.initial_guess_params[3]],
                        [self.initial_guess_params[0] * 1.5,
                         self.initial_guess_params[1] * 1.2,
-                        self.initial_guess_params[2] * 1.1,
+                        self.initial_guess_params[2] * 1.2,
                         self.initial_guess_params[3] * 1.00001])
 
         self.a, self.t, self.tau, self.baseline = self.get_fit_params()
@@ -58,12 +58,22 @@ class SampaFit():
         # peaking time *tau 160ns but 100ns per sample
         tau = 1.6
         # start and end points
-        threshold = baseline + 10 * self.y[:10].std()
-        t_begin = np.where(self.y > threshold)[0][0]
-        t_end = np.where(self.y[t_begin:] < threshold)[0][0] + t_begin
-
+        try:
+            threshold = baseline + 10 * self.y[:10].std()
+            t_begin = np.where(self.y > threshold)[0][0]
+        except IndexError as e:
+            threshold = baseline + 4 * self.y[:10].std()
+            t_begin = np.where(self.y > threshold)[0][0]
+        try:
+            t_end = np.where(self.y[t_begin+1:] < 1.1*threshold)[0][0]+t_begin+1
+        except IndexError as e:
+            t_end = t_begin+10
+            print(e)
+        # print(f'{t_begin=}, {t_end=}, {threshold=}')
+        # print()
         self.x_pulse = self.x[t_begin - 3: t_end + 7]
         self.y_pulse = self.y[t_begin - 3: t_end + 7]
+
         self.y_pulse = np.where(self.y_pulse < threshold, baseline, self.y_pulse)
 
         #

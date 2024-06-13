@@ -53,7 +53,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.plot_event_number_lineEdit.setValidator(only_int)
 
         float_only = QDoubleValidator()
-        float_only.setRange(0.02, 0.5, 2)
+        float_only.setRange(0.02, 2.0, 2)
         float_only.setNotation(QDoubleValidator.StandardNotation)
         self.plot_amplitude_lineEdit.setValidator(float_only)
 
@@ -237,6 +237,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     with open(fullpath, 'w') as f:
                         for line in result['ff'][ampl]:
                             f.write((b' '.join(b'0x' + word for word in line) + b'\n').decode())
+                    self.plot_parity_comboBox.setCurrentText(args[0]['parity'])
                     self.gain_lastrun_label.setText(f'{fullpath}')
                     self.plot_run_number_lineEdit.setText(str(file_number))
                     self.plot_test_name_comboBox.setCurrentIndex(self.plot_test_name_comboBox.findText('gain'))

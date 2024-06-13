@@ -1,8 +1,11 @@
 import os
+import re
 from collections import namedtuple
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 from scipy.interpolate import UnivariateSpline
 from sampa_fit import SampaFit
@@ -36,6 +39,7 @@ class NWaveForm:
         self.__waveform_data = self.__all_data[:, :, 5:]
         self.__rms = self.get_rms()
         self.__max_value = self.get_max_value()
+        self.n_events = self.__waveform_data.shape[0]
 
     @property
     def event(self):
@@ -327,17 +331,65 @@ class NWaveForm:
         # plt.savefig(f'{path}/34-454_rms_unconnected.png')
 
 
+def linearity_df(card_num, cdet, test):
+
+    paths = Path(f'runs/{card_num}/{cdet}pF/{test}/').glob('*.txt')
+    print(paths)
+    # for i in paths:
+    #     print(f'{i=}')
+    vin = sorted([float(re.search(r'\d\.\d+', str(i))[0]) for i in paths])
+    print(f'{vin=}')
+    frames = []
+    for idx in vin:
+        data_list = []
+        filename = f'runs/{card_num}/{cdet}pF/{test}/1-{card_num}-even-2pF-{idx}V.txt'
+        print(f'{filename=}')
+        card_data = NWaveForm(full_filename=filename, event=-1)
+        for event in range(0, card_data.n_events):
+            for row in range(8):
+                for col in range(8):
+                    channel = 8 * row + col
+                    data_to_plot = card_data.waveform_data[event][channel]
+                    # print(f'{event=}, {channel=}')
+                    sampa = SampaFit(x=np.arange(len(data_to_plot)), y=data_to_plot)
+                    dataset = [event, channel, sampa.amplitude, sampa.baseline, sampa.tau]
+                    data_list.append(dataset)
+        columns = ['event', 'channel', 'amplitude', 'baseline', 'tau']
+        df = pd.DataFrame(data_list, columns=columns)
+        df.set_index(['event', 'channel'], inplace=True)
+        mean_df = df.groupby('channel').mean()
+        mean_df['vin'] = idx
+        # print(f'{idx=}<<>>{mean_df.to_string()=}')
+        # print(f'{mean_df.to_string()}')
+        frames.append(mean_df.reset_index())
+
+    df2 = pd.concat(frames)
+    # df2['index_in_channel'] = df2.groupby('channel').cumcount()
+    df2.set_index(['vin', 'channel', ], inplace=True)
+    return df2
+
 if __name__ == '__main__':
     np.set_printoptions(linewidth=1000, threshold=np.inf)
 
-    filename = 'runs/385/raw/105-385.txt'
-    a = NWaveForm(full_filename=filename, event=-1)
+
+    card_num = 345
+    cdet = 40
+    test = 'gain'
+    paths = Path(f'runs/{card_num}/{cdet}pF/{test}/').glob('*.txt')
+    print(paths)
+    # for i in paths:
+    #     print(f'{i=}')
+    vin = sorted([float(re.search(r'\d\.\d+', str(i))[0]) for i in paths])
+    print(f'{vin=}')
+
+    # breakpoint()
+
     # print(a.full_filename)
     # print(a.all_data.shape[0])
-    idx = 0
-    for ch in a.all_data[0]:
-        print(f'ch{idx}={ch}')
-        idx += 1
+    # idx = 0
+    # for ch in a.all_data[3]:
+    #     print(f'ch{idx}={ch}')
+    #     idx += 1
     # a.plot_fitted_waveform()
 
     # print(a.waveform_data)
@@ -347,12 +399,49 @@ if __name__ == '__main__':
     # print(f'{a.get_max_value()=}')
     # print(f'{a.get_event_max_value(0)=}')
 
-    a.plot_waveform()
+    # a.plot_waveform()
     # a.plot_waveform_with_spline(0)
     # a = NWaveForm(full_filename=filename, event=-1)
 
-    # a.plot_fitted_waveform()
+    # a.plot_fitted_waveform()###########################################################
     # a.plot_fitted_amplitude()
-    # a.plot_spline_data()
     #
     # a.plot_rms()
+    pass
+    df2_10 = linearity_df(345, 10, 'gain')
+    amplitudes_channel_10 = df2_10.loc[(slice(None), 1), 'amplitude']
+    amplitudes_channel_10 = amplitudes_channel_10.reset_index(level='channel', drop=True)
+
+    df2_20 = linearity_df('345', '20', 'gain')
+    amplitudes_channel_20 = df2_20.loc[(slice(None), 1), 'amplitude']
+    amplitudes_channel_20 = amplitudes_channel_20.reset_index(level='channel', drop=True)
+
+    df2_40 = linearity_df('345', '40', 'gain')
+    amplitudes_channel_40 = df2_40.loc[(slice(None), 1), 'amplitude']
+    amplitudes_channel_40 = amplitudes_channel_40.reset_index(level='channel', drop=True)
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(amplitudes_channel_10.index[0:-1], amplitudes_channel_10.values[0:-1], marker='o', color='blue')
+    plt.plot(amplitudes_channel_20.index[0:-1], amplitudes_channel_20.values[0:-1], marker='o', color='red')
+    plt.plot(amplitudes_channel_40.index[0:-1], amplitudes_channel_40.values[0:-1], marker='o', color='green')
+
+    plt.title('Зависимость амплитуд от mini_df_index для канала 1')
+    plt.xlabel('mini_df_index')
+    plt.ylabel('amplitude')
+    plt.grid(True)
+    plt.show()
+
+
+    # breakpoint()
+    # fig, axs = plt.subplots(1, constrained_layout=True)
+    # axs.plot(mean_df['amplitude'], 'o', )
+    # # axs.plot(rms_mean, 'r')
+    # axs.set_ylim(0)
+    # axs.set_xlabel('Channel number')
+    # axs.set_ylabel('RMS channel')
+    # axs.set_title(f'RMS from file {filename}')
+    # bbox = dict(boxstyle='square', facecolor='white', edgecolor='black', )
+    # # axs.annotate(f'RMS Mean={rms_mean[0]:.3f}',
+    # #              xy=(0.05, 0.1), xycoords='axes fraction',
+    # #              bbox=bbox)
+    # plt.show()
