@@ -1081,28 +1081,6 @@
            </property>
           </widget>
          </item>
-         <item row="6" column="2" colspan="2">
-          <widget class="QLineEdit" name="plot_amplitude_lineEdit">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>20</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>0.02</string>
-           </property>
-           <property name="placeholderText">
-            <string>0.5</string>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="0" colspan="2" alignment="Qt::AlignLeft">
           <widget class="QLabel" name="plot_card_number_label">
            <property name="sizePolicy">
@@ -1209,6 +1187,170 @@
            <item>
             <property name="text">
              <string>gain</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item row="6" column="2" colspan="2">
+          <widget class="QComboBox" name="plot_amplitude_comboBox">
+           <item>
+            <property name="text">
+             <string>0.02</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.03</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.04</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.05</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.06</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.07</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.08</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.09</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.1</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.15</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.2</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.25</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.3</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.35</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.4</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.45</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.46</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.47</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.48</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.49</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.50</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.51</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.52</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.53</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.54</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.55</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.56</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.57</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.58</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.59</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>0.6</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>2.0</string>
             </property>
            </item>
           </widget>

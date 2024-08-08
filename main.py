@@ -55,7 +55,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         float_only = QDoubleValidator()
         float_only.setRange(0.02, 2.0, 2)
         float_only.setNotation(QDoubleValidator.StandardNotation)
-        self.plot_amplitude_lineEdit.setValidator(float_only)
+        # self.plot_amplitude_lineEdit.setValidator(float_only)
 
         self.show_waveform_btn.clicked.connect(self.show_waveform_plot_window)
         self.show_rms_btn.clicked.connect(self.show_rms_plot_window)
@@ -507,7 +507,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             case 'crosstalk':
                 return f'{self.plot_run_number_lineEdit.text()}-{self.plot_card_number_lineEdit.text()}-{self.plot_parity_comboBox.currentText()}-2pF.txt'
             case 'gain':
-                return f'{self.plot_run_number_lineEdit.text()}-{self.plot_card_number_lineEdit.text()}-{self.plot_parity_comboBox.currentText()}-2pF-{self.plot_amplitude_lineEdit.text()}V.txt'
+                return f'{self.plot_run_number_lineEdit.text()}-{self.plot_card_number_lineEdit.text()}-{self.plot_parity_comboBox.currentText()}-2pF-{self.plot_amplitude_comboBox.currentText()}V.txt'
             case _:
                 raise ValueError(f'No such test: {self.plot_test_name_comboBox.currentText()}')
                 # return None
