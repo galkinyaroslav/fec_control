@@ -909,7 +909,7 @@ class Ui_MainWindow(object):
         self.plot_amplitude_comboBox.setItemText(17, QCoreApplication.translate("MainWindow", u"0.47", None))
         self.plot_amplitude_comboBox.setItemText(18, QCoreApplication.translate("MainWindow", u"0.48", None))
         self.plot_amplitude_comboBox.setItemText(19, QCoreApplication.translate("MainWindow", u"0.49", None))
-        self.plot_amplitude_comboBox.setItemText(20, QCoreApplication.translate("MainWindow", u"0.50", None))
+        self.plot_amplitude_comboBox.setItemText(20, QCoreApplication.translate("MainWindow", u"0.5", None))
         self.plot_amplitude_comboBox.setItemText(21, QCoreApplication.translate("MainWindow", u"0.51", None))
         self.plot_amplitude_comboBox.setItemText(22, QCoreApplication.translate("MainWindow", u"0.52", None))
         self.plot_amplitude_comboBox.setItemText(23, QCoreApplication.translate("MainWindow", u"0.53", None))
