@@ -143,7 +143,7 @@ class FEC():
         result = self.ttok(f'wmsk 0xffffffff;car {link};adc', printing=printing)
         return result
 
-    def adcd(self, link: int = 0, n: int = 10, printing: bool = False):
+    def adcd(self, link: int = 0, n: int = 10, printing: bool = False) -> np.ndarray:
         # oscmd('echo ".">toConsole.txt');
         #       0       1     2       3      4      5      6      7      8     9      10     11     12     13     14     15
         #    |......|......|......|......|......|......|......|......|......|......|......|......|......|......|......|......|......|
@@ -182,7 +182,7 @@ class FEC():
         return svnarr
 
     def get_file_number(self, card_number: int, test_name: TestsName = TestsName.RAW) -> int:
-        path = f'./runs/{card_number}/{test_name.value}/'
+        path = f'runs/{card_number}/{test_name.value}/'
         if not os.path.exists(path):
             os.makedirs(path)
         return len(os.listdir(path)) + 1
@@ -241,8 +241,9 @@ class FEC():
                     events_file.write((b' '.join(b'0x' + word for word in received_data[1:-34]) + b'\n').decode())
                 runs_number -= 1
                 nrun += 1
+        path = f'./runs/{card_number}/{test_name.value}'
         oscmd(
-            f'cp events.lst ./runs/{card_number}/{test_name.value}/{file_name}')  # TODO придумать как передавать имя теста 2
+            f'mkdir -p {path} && cp events.lst {path}/{file_name}')
         return
 
     def get_trstat(self, link: int) -> dict:
@@ -307,7 +308,7 @@ class FEC():
         for link in range(31):
             self.ini(link)
 
-    def getffw_all(self,runs_number: int = 1, data_filter: bool = True) -> None:
+    def getffw_all(self, runs_number: int = 1, data_filter: bool = True) -> None:
         for link in range(31):
             self.getffw(link=link, runs_number=runs_number, single=False, data_filter=data_filter)
 
@@ -328,7 +329,7 @@ class FEC():
         # self.get_trstat(link)
         # card_number = self.get_card_number(link)
         # file_number = self.get_file_number(card_number=card_number, test_name=TestsName.PLL)
-        # for i in range(runs):
+        # for i in range(runs_old_to_11_09_24):
         #     with (open(f'{file_number}-{card_number}.pll', 'a') as pf):
         self.ttok(f'car {link}')
         pll = self.ttok('scpll0; scpll1').replace(b',', b'').split(b' ')
@@ -345,32 +346,46 @@ class FEC():
         print(int(response[9]), int(response[18]))
         return True if (int(response[9]) | int(response[18])) <= 1 else False
 
-def adcd_all_writable():
+def adcd_all_writable(part:str):
     # ACDC ALL WITH WRITING TO FILE
     import openpyxl
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = 'fec temperatures'
+    import pandas as pd
+    # wb = openpyxl.Workbook()
+    # ws = wb.active
+    # ws.title = 'fec temperatures'
 
-    path = './arkolab'
+    path = './INP_ROC'
     if not os.path.exists(path):
         os.makedirs(path)
     time_now = datetime.datetime.now()
     try:
+        data_dict = dict()
+        df = pd.DataFrame()
+        header = ['T', '1.7Vi', '1.1Vc5', '1.25Vd', 'mA2_S0', 'mA1_S0', '1.1Vr', '1.25Va', 'mA0_S0', 'Tsam',
+                  '1.25Va', 'mA3_S1', '1.1Vr', 'mA4_S1', 'mA5_S1', '1.25Va']
+
         for i in range(31):
             print(f'Link={i}')
-            data = narrow.adcd(link=i, n=5)
-            line = [d[0] for d in data] + [d[9] for d in data]
+            data_from_link = narrow.adcd(link=i, n=5)
+            # for adcd_line in data:
+            data_dict[f'link{i}'] = data_from_link
+            # line = [d[0] for d in data] + [d[9] for d in data]
             # line =
-            if i == 0:
-                ws.append(['fpga' for _ in range(len(data))] + ['sampa' for _ in range(len(data))])
-            ws.append(line)
+            # if i == 0:
+            #     ws.append(['fpga' for _ in range(len(data))] + ['sampa' for _ in range(len(data))])
+            # ws.append([d for d in data])
+        for link, measurements in data_dict.items():
+            adcd_df = pd.DataFrame(measurements, columns=header)  # Преобразуем np.ndarray в DataFrame
+            adcd_df['link'] = link  # Добавляем столбец с названием датчика
+            df = pd.concat([df, adcd_df], ignore_index=True)
+        df.to_excel(f'{path}/{time_now.strftime("%Y-%m-%d_%H-%M-%S")}_{part}.xlsx', index=False)
     except Exception as e:
         print(e)
     finally:
+        print(f'DONE {time_now.strftime("%Y-%m-%d_%H-%M-%S")}')
         # with open(f'{path}/{time_now}.csv', 'ax') as f:
-        wb.save(f'{path}/{str(time_now)}_w.xlsx')
-        wb.close()
+        # wb.save(f'{path}/{str(time_now)}_N.xlsx')
+        # wb.close()
 
 if __name__ == "__main__":
     # import openpixel
@@ -403,9 +418,9 @@ if __name__ == "__main__":
         # narrow.get_trstat_all()
         # narrow.ini_all()
         # narrow.get_tts_tth_all()
-
-        adcd_all_writable()
-
+        #
+        # adcd_all_writable(part='W')
+        # narrow.adcd(link=0, n=100)
         # narrow.get_tts_tth(0)
 
 
@@ -417,7 +432,11 @@ if __name__ == "__main__":
         # print(f'{asd=}')
 
         # print(f.get_tts_tth(link=link))
-
+        # narrow.getffw_all(runs_number=100)
+        # for i in range(31):
+        #     narrow.get_trstat(link=i)
+        # narrow.getffw(link=10, runs_number=100)
+        narrow.getffw_all(runs_number=100)
     except Exception as e:
         print(e)
         print(traceback.format_exc())
