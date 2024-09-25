@@ -408,16 +408,17 @@ if __name__ == '__main__':
     #
     # a.plot_rms()
     pass
-    df2_10 = linearity_df(345, 10, 'gain')
-    amplitudes_channel_10 = df2_10.loc[(slice(None), 1), 'amplitude']
+    df2_10 = linearity_df('345', '10', 'gain')
+    df2_20 = linearity_df('345', '20', 'gain')
+    df2_40 = linearity_df('345', '40', 'gain')
+
+    amplitudes_channel_10 = df2_10.loc[(slice(None), 0), 'amplitude']
     amplitudes_channel_10 = amplitudes_channel_10.reset_index(level='channel', drop=True)
 
-    df2_20 = linearity_df('345', '20', 'gain')
-    amplitudes_channel_20 = df2_20.loc[(slice(None), 1), 'amplitude']
+    amplitudes_channel_20 = df2_20.loc[(slice(None), 0), 'amplitude']
     amplitudes_channel_20 = amplitudes_channel_20.reset_index(level='channel', drop=True)
 
-    df2_40 = linearity_df('345', '40', 'gain')
-    amplitudes_channel_40 = df2_40.loc[(slice(None), 1), 'amplitude']
+    amplitudes_channel_40 = df2_40.loc[(slice(None), 0), 'amplitude']
     amplitudes_channel_40 = amplitudes_channel_40.reset_index(level='channel', drop=True)
 
     plt.figure(figsize=(10, 6))
@@ -425,7 +426,7 @@ if __name__ == '__main__':
     plt.plot(amplitudes_channel_20.index[0:-1], amplitudes_channel_20.values[0:-1], marker='o', color='red')
     plt.plot(amplitudes_channel_40.index[0:-1], amplitudes_channel_40.values[0:-1], marker='o', color='green')
 
-    plt.title('Зависимость амплитуд от mini_df_index для канала 1')
+    plt.title('Зависимость амплитуд от mini_df_index для канала 0')
     plt.xlabel('mini_df_index')
     plt.ylabel('amplitude')
     plt.grid(True)

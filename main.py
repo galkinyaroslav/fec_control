@@ -24,13 +24,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         host = '192.168.1.235'
         port = 30
-        self.fe_card = FEC(host=host, port=port)
+        try:
+            self.fe_card = FEC(host=host, port=port)
 
-        self.gen = AFG3152C()
-        self.gen.rst()
-        time.sleep(1)
-        self.gen.set_initial_parameters()
-
+            self.gen = AFG3152C()
+            self.gen.rst()
+            time.sleep(1)
+            self.gen.set_initial_parameters()
+        except Exception as e:
+            print(traceback.format_exc())
         self.threadpool = QThreadPool()
 
         # PLOTTING
