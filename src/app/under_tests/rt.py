@@ -223,7 +223,7 @@ def ui():
 		if s[0:5]=="wmma ": w(s);     continue
 		#
 		if s[0:4]=="rmsk": w(s);     continue
-		if s[0:5]=="test ": w(s);     continue
+		if s[0:5]=="tests ": w(s);     continue
 		if s[0:7]=="wmsk 0x": w(s);  continue
 		if s=="regs":regs();continue
 		if s=="adcs":adcs();continue;
@@ -370,7 +370,7 @@ def getffw(n=1):
 	print '\nRun file %d'%filN;
 	#oscmd('echo 00 >/home/serg/pyt/tmp/everdy.txt'); x = oscmd('cat /home/serg/pyt/tmp/everdy.txt');
 	#print ' See /home/serg/tmp/everdy.txt :<%s> '%x;
-	fo=open('events.lst','w'); oscmd('echo ".">toConsole.txt');
+	fo=open('../../../temp/events.lst', 'w'); oscmd('echo ".">toConsole.txt');
 	for j in xrange(1,n+1):
 		#oscmd('echo 00 >/home/serg/pyt/tmp/everdy.txt');
 		ttok(";tth 1;");

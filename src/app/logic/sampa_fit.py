@@ -1,7 +1,10 @@
 import warnings
+from pathlib import Path
 
 import numpy as np
 from scipy.optimize import curve_fit, differential_evolution
+
+from app.config import DATA_DIR
 
 
 class SampaFit():
@@ -84,20 +87,21 @@ class SampaFit():
 
 if __name__ == '__main__':
     from matplotlib import pyplot as plt
-    from waveform import NWaveForm
+    from app.logic.data_structure.factory import NWaveForm
 
-    FILENAME = 'runs/454/0pF/raw/54-454.txt'
+    FILENAME = Path(DATA_DIR,'runs_old_to_11_09_24','454/0pF/raw/54-454.txt')
     CHANNEL = 26
     EVENT = 0
-    arr2 = NWaveForm(full_filename=FILENAME)
+    firmware = ['0x63040400', '0x64040800']
+    arr2 = NWaveForm(data=FILENAME, firmware=firmware[0])
     ampl = []
     px = 1 / plt.rcParams['figure.dpi']  # pixel in inches
 
     fig, ax = plt.subplots(figsize=(3840 * px, 2160 * px))
 
-    for event in range(arr2.all_data.shape[0]):
+    for event in range(arr2.data.shape[0]):
 
-        y = arr2.waveform_data[event][CHANNEL]
+        y = arr2.data[event][CHANNEL]
         x = np.arange(len(y))
         sampa = SampaFit(x, y)
         a, t, tau, baseline = sampa.diff_minimization()

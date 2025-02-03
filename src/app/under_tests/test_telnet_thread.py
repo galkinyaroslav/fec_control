@@ -1,14 +1,12 @@
-import keyword
 import os
 import sys
-import time
 
 import numpy as np
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QTextEdit, QVBoxLayout, QWidget, QLineEdit, \
     QMessageBox, QLabel
 from PySide6.QtCore import QObject, Signal, QRunnable, Slot, QThreadPool
-from fec import FEC  # Импорт вашего модуля FEC
-from waveform import NWaveForm
+from app.logic.fec import FEC  # Импорт вашего модуля FEC
+from app.logic.data_structure.waveform import NWaveForm
 
 
 class WorkerSignals(QObject):

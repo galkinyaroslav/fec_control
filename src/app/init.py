@@ -1,43 +1,63 @@
 import fnmatch
 import json
-import os.path
+# import os.path
 import sys
 import traceback
 import time
+from pathlib import Path
 
 import numpy as np
-from PySide6.QtCore import QThreadPool, Slot
+from PySide6.QtCore import QThreadPool, Slot, Signal
 from PySide6.QtGui import QIntValidator, QColor, QDoubleValidator
 from PySide6.QtWidgets import QMainWindow, QApplication, QMessageBox
 
-from fec import FEC, TestsName
-from gen import AFG3152C
-from waveform import NWaveForm
-from waveform_window import WaveFormWindow, RMSWindow
-from MainWindow import Ui_MainWindow
-from workers import Worker
+from app.config import RUNS_DIR, DATA_DIR
+from app.logic.fec import TestsName, FEC, get_card_number, get_card_fw
+from app.logic.gen import AFG3152C
+from app.logic.data_structure.factory import NWaveForm
+from app.widgets.connection import ConnectionForm
+from app.windows.waveform_window import WaveFormWindow, RMSWindow
+from app.ui.MainWindow_UI import Ui_MainWindow
+from app.logic.workers import Worker
+
+FW_DATA_LENGTH = {'0x24040800': 778,
+                  '0x23040600': 768,
+                  '0x23040400': 768}
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
+
     def __init__(self, *args, obj=None, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
-        host = '192.168.1.235'
-        port = 30
-        try:
-            self.fe_card = FEC(host=host, port=port)
+        # host = '192.168.1.235'
+        # port = 30
+        # try:
+        #     self.fe_card = FEC(host=host, port=port)
+        #
+        #     self.gen = AFG3152C()
+        #     self.gen.rst()
+        #     time.sleep(1)
+        #     self.gen.set_initial_parameters()
+        # except Exception as e:
+        #     print(traceback.format_exc())
 
-            self.gen = AFG3152C()
-            self.gen.rst()
-            time.sleep(1)
-            self.gen.set_initial_parameters()
-        except Exception as e:
-            print(traceback.format_exc())
+        self.fe_card: FEC | None = None
+        self.gen: AFG3152C | None = None
+
         self.threadpool = QThreadPool()
 
         # PLOTTING
         self.waveform_window = WaveFormWindow()
         self.rms_window = RMSWindow()
+        for button in self.buttonGroup.buttons():
+            button.setEnabled(False)
+        self.actionConnections.triggered.connect(self.open_connection_widget)
+
+        for button in self.buttonGroup.buttons():
+            button.clicked.connect(self.on_button_clicked)
+        # print(f'{self.menuMenu.actions()=}')
+        # self.connection_widget : ConnectionForm | None = None
 
         # self.__plot_card_number = self.plot_card_number_lineEdit.placeholderText()
         self.__plot_cdet = self.plot_cdet_comboBox.itemText(self.plot_cdet_comboBox.currentIndex())
@@ -54,9 +74,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.plot_run_number_lineEdit.setValidator(only_int)
         self.plot_event_number_lineEdit.setValidator(only_int)
 
-        float_only = QDoubleValidator()
-        float_only.setRange(0.02, 2.0, 2)
-        float_only.setNotation(QDoubleValidator.StandardNotation)
+        # float_only = QDoubleValidator()
+        # float_only.setRange(0.02, 2.0, 2)
+        # float_only.setNotation(QDoubleValidator.StandardNotation)
         # self.plot_amplitude_lineEdit.setValidator(float_only)
 
         self.show_waveform_btn.clicked.connect(self.show_waveform_plot_window)
@@ -87,106 +107,233 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.scan_pll_runs_spinbox.valueChanged.connect(self.scan_pll_runs_spinbox_changed)
         # self.set_sh0_spinbox.valueChanged.connect(self.set_sh0_spinbox_changed)
         # self.set_sh1_spinbox.valueChanged.connect(self.set_sh1_spinbox_changed)
-
-        self.trstat_btn.clicked.connect(lambda: self.execute(run_func=self.trstat_fc,
-                                                             fecard=self.fe_card,
-                                                             link=self.__link))
-        self.ini_btn.clicked.connect(lambda: self.execute(run_func=self.ini_fc,
-                                                          fecard=self.fe_card,
-                                                          link=self.__link))
-        self.tts_tth_btn.clicked.connect(lambda: self.execute(run_func=self.tts_tth_fc,
-                                                              fecard=self.fe_card,
-                                                              link=self.__link
-
-                                                              ))
-        self.scan_pll_btn.clicked.connect(lambda: self.execute(run_func=self.scan_pll_fc,
-                                                               fecard=self.fe_card,
-                                                               link=self.__link,
-                                                               runs=self.__scan_pll_runs
-                                                               ))
-        self.set_pll_btn.clicked.connect(lambda: self.execute(run_func=self.set_pll_fc,
-                                                              fecard=self.fe_card,
-                                                              link=self.__link,
-                                                              sh0=self.set_sh0_spinbox.value(),
-                                                              sh1=self.set_sh1_spinbox.value()
-                                                              ))
-        self.adcd_btn.clicked.connect(lambda: self.execute(run_func=self.adcd_fc,
-                                                           fecard=self.fe_card,
-                                                           link=self.__link,
-                                                           n=self.adcd_number_spinBox.value()
-                                                           ))
-        self.ttok_btn.clicked.connect(lambda: self.execute(run_func=self.ttok_fc,
-                                                           fecard=self.fe_card,
-                                                           ))
-
-        # # CROSSTALK EVEN
-        # self.crosstalk_btn.clicked.connect(lambda: self.execute(run_func=self.crosstalk_fc,
-        #                                                         fecard=self.fe_card,
-        #                                                         gen=self.gen,
-        #                                                         data_filter=True,
-        #                                                         link=self.__link))
-
-        # GAIN + CROSSTALK
-        self.gain_cross_even_btn.clicked.connect(lambda: self.execute(run_func=self.gain_cross_fc,
-                                                                      fecard=self.fe_card,
-                                                                      gen=self.gen,
-                                                                      data_filter=True,
-                                                                      link=self.__link,
-                                                                      parity='even',
-                                                                      ))
-        self.gain_cross_odd_btn.clicked.connect(lambda: self.execute(run_func=self.gain_cross_fc,
-                                                                     fecard=self.fe_card,
-                                                                     gen=self.gen,
-                                                                     data_filter=True,
-                                                                     link=self.__link,
-                                                                     parity='odd',
-                                                                     ))
-        # RMS_PEDESTAL
-        self.pedestal_btn.clicked.connect(lambda: self.execute(run_func=self.rms_pedestal_fc,
-                                                               fecard=self.fe_card,
-                                                               data_filter=True,
-                                                               link=self.__link))
+        #
+        # self.trstat_btn.clicked.connect(lambda: self.execute(run_func=self.trstat_fc,
+        #                                                      fecard=self.fe_card,
+        #                                                      link=self.__link))
+        # self.ini_btn.clicked.connect(lambda: self.execute(run_func=self.ini_fc,
+        #                                                   fecard=self.fe_card,
+        #                                                   link=self.__link))
+        # self.tts_tth_btn.clicked.connect(lambda: self.execute(run_func=self.tts_tth_fc,
+        #                                                       fecard=self.fe_card,
+        #                                                       link=self.__link
+        #
+        #                                                       ))
+        # self.scan_pll_btn.clicked.connect(lambda: self.execute(run_func=self.scan_pll_fc,
+        #                                                        fecard=self.fe_card,
+        #                                                        link=self.__link,
+        #                                                        runs=self.__scan_pll_runs
+        #                                                        ))
+        # self.set_pll_btn.clicked.connect(lambda: self.execute(run_func=self.set_pll_fc,
+        #                                                       fecard=self.fe_card,
+        #                                                       link=self.__link,
+        #                                                       sh0=self.set_sh0_spinbox.value(),
+        #                                                       sh1=self.set_sh1_spinbox.value()
+        #                                                       ))
+        # self.adcd_btn.clicked.connect(lambda: self.execute(run_func=self.adcd_fc,
+        #                                                    fecard=self.fe_card,
+        #                                                    link=self.__link,
+        #                                                    n=self.adcd_number_spinBox.value()
+        #                                                    ))
+        # self.ttok_btn.clicked.connect(lambda: self.execute(run_func=self.ttok_fc,
+        #                                                    fecard=self.fe_card,
+        #                                                    ))
+        #
+        # # GAIN + CROSSTALK
+        # self.gain_cross_even_btn.clicked.connect(lambda: self.execute(run_func=self.gain_cross_fc,
+        #                                                               fecard=self.fe_card,
+        #                                                               gen=self.gen,
+        #                                                               data_filter=True,
+        #                                                               link=self.__link,
+        #                                                               parity='even',
+        #                                                               ))
+        # self.gain_cross_odd_btn.clicked.connect(lambda: self.execute(run_func=self.gain_cross_fc,
+        #                                                              fecard=self.fe_card,
+        #                                                              gen=self.gen,
+        #                                                              data_filter=True,
+        #                                                              link=self.__link,
+        #                                                              parity='odd',
+        #                                                              ))
+        # # RMS_PEDESTAL
+        # self.pedestal_btn.clicked.connect(lambda: self.execute(run_func=self.rms_pedestal_fc,
+        #                                                        fecard=self.fe_card,
+        #                                                        data_filter=True,
+        #                                                        link=self.__link))
+        # # RAW
+        self.__raw_runs = self.raw_runs_spinBox.value()
+        self.raw_runs_spinBox.valueChanged.connect(self.raw_runs_spinbox_changed)
+        # self.raw_btn.clicked.connect(lambda: self.execute(run_func=self.raw_fc,
+        #                                                   fecard=self.fe_card,
+        #                                                   runs_number=self.__raw_runs,
+        #                                                   data_filter=True,
+        #                                                   link=self.__link
+        #                                                   ))
 
         # CDET
         self.__enc_cdet = self.enc_cdet_comboBox.itemText(self.enc_cdet_comboBox.currentIndex())
         self.enc_cdet_comboBox.activated.connect(self.enc_cdet_activate)
 
-        # RAW
-        self.__raw_runs = self.raw_runs_spinBox.value()
-        self.raw_runs_spinBox.valueChanged.connect(self.raw_runs_spinbox_changed)
-        self.raw_btn.clicked.connect(lambda: self.execute(run_func=self.raw_fc,
-                                                          fecard=self.fe_card,
-                                                          runs_number=self.__raw_runs,
-                                                          data_filter=True,
-                                                          link=self.__link
-                                                          ))
+        self.button_functions = {
+            'pedestal_btn': self.rms_pedestal_fc,
+            'gain_cross_odd_btn': self.gain_cross_fc,
+            'gain_cross_even_btn': self.gain_cross_fc,
+            'raw_btn': self.raw_fc,
+            'ttok_btn': self.ttok_fc,
+            'adcd_btn': self.adcd_fc,
+            'set_pll_btn': self.set_pll_fc,
+            'scan_pll_btn': self.scan_pll_fc,
+            'tts_tth_btn': self.tts_tth_fc,
+            'ini_btn': self.ini_fc,
+            'trstat_btn': self.trstat_fc,
+
+        }
+        self.current_args = {
+            'pedestal_btn': None,
+            'gain_cross_odd_btn': None,
+            'gain_cross_even_btn': None,
+            'raw_btn': None,
+            'ttok_btn': None,
+            'adcd_btn': None,
+            'set_pll_btn': None,
+            'scan_pll_btn': None,
+            'tts_tth_btn': None,
+            'ini_btn': None,
+            'trstat_btn': None,
+        }
 
         self.show()
 
+    def update_args(self, button_name):
+        """Update `args` before running `run_func`."""
+
+        match button_name:
+            case 'pedestal_btn':
+                self.current_args['pedestal_btn'] = {
+                    'fecard': self.fe_card,
+                    'data_filter': True,
+                    'link': self.__link,
+                }
+            case 'gain_cross_odd_btn':
+                self.current_args['gain_cross_odd_btn'] = {
+                    'fecard': self.fe_card,
+                    'gen': self.gen,
+                    'data_filter': True,
+                    'link': self.__link,
+                    'parity': 'odd'
+                }
+            case 'gain_cross_even_btn':
+                self.current_args['gain_cross_even_btn'] = {
+                    'fecard': self.fe_card,
+                    'gen': self.gen,
+                    'data_filter': True,
+                    'link': self.__link,
+                    'parity': 'even'
+                }
+            case 'raw_btn':
+                self.current_args['raw_btn'] = {
+                    'fecard': self.fe_card,
+                    'runs_number': self.__raw_runs,
+                    'data_filter': True,
+                    'link': self.__link,
+                }
+            case 'ttok_btn':
+                self.current_args['ttok_btn'] = {
+                    'fecard': self.fe_card,
+                    'command': self.ttok_lineEdit.text(),
+                }
+            case 'adcd_btn':
+                self.current_args['adcd_btn'] = {
+                    'fecard': self.fe_card,
+                    'link': self.__link,
+                    'n': self.adcd_number_spinBox.value(),
+                }
+            case 'set_pll_btn':
+                self.current_args['set_pll_btn'] = {
+                    'fecard': self.fe_card,
+                    'link': self.__link,
+                    'sh0': self.set_sh0_spinbox.value(),
+                    'sh1': self.set_sh1_spinbox.value(),
+                }
+            case 'scan_pll_btn':
+                self.current_args['scan_pll_btn'] = {
+                    'fecard': self.fe_card,
+                    'link': self.__link,
+                    'runs': self.__scan_pll_runs,
+                }
+            case 'tts_tth_btn':
+                self.current_args['tts_tth_btn'] = {
+                    'fecard': self.fe_card,
+                    'link': self.__link,
+                }
+            case 'ini_btn':
+                self.current_args['ini_btn'] = {
+                    'fecard': self.fe_card,
+                    'link': self.__link,
+                }
+            case 'trstat_btn':
+                self.current_args['trstat_btn'] = {
+                    'fecard': self.fe_card,
+                    'link': self.__link,
+                }
+
+    def on_button_clicked(self):
+        sender = self.sender()
+        button_name = sender.objectName()
+        if button_name not in self.button_functions:
+            print(f'Error: There is no function for {button_name}!')
+            return
+
+        self.update_args(button_name)
+
+        run_func = self.button_functions[button_name]
+        kwargs = self.current_args[button_name]
+
+        for btn in self.buttonGroup.buttons():
+            btn.setEnabled(False)
+        sender.setStyleSheet("background-color: red")
+
+        self.execute(button_name=button_name, run_func=run_func, **kwargs)
+
+    def open_connection_widget(self):
+        self.connection_widget = ConnectionForm(self.fe_card, self.gen)
+        self.connection_widget.connections_ready.connect(self.handle_connections)
+        self.connection_widget.exec()
+
+    def handle_connections(self, fec: FEC, gen: AFG3152C):
+        self.fe_card = fec
+        self.gen = gen
+        for button in self.buttonGroup.buttons():
+            button.setEnabled(True)
+
     def execute(self, *args, **kwargs):
-        # print(kwargs)
+        print(kwargs['run_func'])
+
+        # self.buttonGroup.buttons()
         worker = Worker(*args, **kwargs)
         worker.signals.finished.connect(self.onTelnetFinished)
         # Execute
         self.threadpool.start(worker)
 
-    @Slot(object, object, object)
-    def onTelnetFinished(self, fec_func, result, *args, **kwargs):
-        print(f'{fec_func.__name__} is finished\n')
+    @Slot(object, object, object, object)
+    def onTelnetFinished(self, fec_func, button_name, result, *args, **kwargs):
+        print(f'{fec_func.__name__} on {button_name} is finished\n')
         print(f'{args=}, {kwargs=}')
-        match fec_func.__name__:
-            case 'rms_pedestal_fc':
+        for button in self.buttonGroup.buttons():
+            button.setEnabled(True)
+            if button.objectName() == button_name:
+                button.setStyleSheet("")
+        match button_name:
+            case 'pedestal_btn':
                 file_number = self.get_file_number(TestsName.RMS_PEDESTAL)
                 vatfilename = f'{file_number}-{self.__card_number}.vat'
                 filename = f'{file_number}-{self.__card_number}.txt'
                 path = self.get_path(test_name=TestsName.RMS_PEDESTAL)
-                fullpath = path + filename
-                vatfullpath = path + vatfilename
+                path.mkdir(parents=True, exist_ok=True)
+                fullpath = Path(path, filename)
+                vatfullpath = Path(path, vatfilename)
                 header = ['T', 'Vi1_7', 'Vc5_1_1', 'Vd1_25', 'mA2_S0', 'mA1_S0', 'Vr1_1_1', 'Va1_1_25', 'mA0_S0',
                           'Tsam', 'Va2_1_25', 'mA3_S1', 'Vr2_1_1', 'mA4_S1', 'mA5_S1', 'Va3_1_25']
                 np.savetxt(vatfullpath, result['adcd'], delimiter=' ', fmt='%.2f', header=f'{' '.join(header)}')
-                if not os.path.exists(path):
-                    os.makedirs(path)
                 with open(fullpath, 'w') as f:
                     for line in result['ff']:
                         f.write((b' '.join(b'0x' + word for word in line) + b'\n').decode())
@@ -217,7 +364,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             #         self.plot_run_number_lineEdit.setText(str(file_number))
             #         self.plot_test_name_comboBox.setCurrentIndex(self.plot_test_name_comboBox.findText('crosstalk'))
 
-            case 'gain_cross_fc':
+            case 'gain_cross_odd_btn' | 'gain_cross_even_btn':
                 ampl_range = np.concatenate([np.linspace(0.02, 0.1, 9),
                                              np.linspace(0.15, 0.4, 6),
                                              np.linspace(0.45, 0.6, 16),
@@ -225,17 +372,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 file_number = self.get_file_number(TestsName.GAIN)
                 vatfilename = f'{file_number}-{self.__card_number}-2pF.vat'
                 path = self.get_path(test_name=TestsName.GAIN)
-                vatfullpath = path + vatfilename
+                vatfullpath = Path(path, vatfilename)
                 header = ['T', 'Vi1_7', 'Vc5_1_1', 'Vd1_25', 'mA2_S0', 'mA1_S0', 'Vr1_1_1', 'Va1_1_25', 'mA0_S0',
                           'Tsam', 'Va2_1_25', 'mA3_S1', 'Vr2_1_1', 'mA4_S1', 'mA5_S1', 'Va3_1_25']
                 np.savetxt(vatfullpath, result['adcd'], delimiter=' ', fmt='%.2f', header=f'{' '.join(header)}')
                 for ampl in range(len(ampl_range)):
 
                     filename = f'{file_number}-{self.__card_number}-{args[0]['parity']}-2pF-{round(ampl_range[ampl], 2)}V.txt'
-                    fullpath = path + filename
-
-                    if not os.path.exists(path):
-                        os.makedirs(path)
+                    fullpath = Path(path, filename)
+                    fullpath.parent.mkdir(parents=True, exist_ok=True)
                     with open(fullpath, 'w') as f:
                         for line in result['ff'][ampl]:
                             f.write((b' '.join(b'0x' + word for word in line) + b'\n').decode())
@@ -243,18 +388,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     self.gain_lastrun_label.setText(f'{fullpath}')
                     self.plot_run_number_lineEdit.setText(str(file_number))
                     self.plot_test_name_comboBox.setCurrentIndex(self.plot_test_name_comboBox.findText('gain'))
-            case 'raw_fc':
+            case 'raw_btn':
                 file_number = self.get_file_number(TestsName.RAW)
                 vatfilename = f'{file_number}-{self.__card_number}.vat'
                 filename = f'{file_number}-{self.__card_number}.txt'
                 path = self.get_path(test_name=TestsName.RAW)
-                fullpath = path + filename
-                vatfullpath = path + vatfilename
+                path.mkdir(parents=True, exist_ok=True)
+                fullpath = Path(path, filename)
+                vatfullpath = Path(path, vatfilename)
                 header = ['T', 'Vi1_7', 'Vc5_1_1', 'Vd1_25', 'mA2_S0', 'mA1_S0', 'Vr1_1_1', 'Va1_1_25', 'mA0_S0',
                           'Tsam', 'Va2_1_25', 'mA3_S1', 'Vr2_1_1', 'mA4_S1', 'mA5_S1', 'Va3_1_25']
                 np.savetxt(vatfullpath, result['adcd'], delimiter=' ', fmt='%.2f', header=f'{' '.join(header)}')
-                if not os.path.exists(path):
-                    os.makedirs(path)
                 with open(fullpath, 'w') as f:
                     for line in result['ff']:
                         f.write((b' '.join(b'0x' + word for word in line) + b'\n').decode())
@@ -263,18 +407,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.plot_run_number_lineEdit.setText(str(file_number))
                 self.plot_test_name_comboBox.setCurrentIndex(self.plot_test_name_comboBox.findText('raw'))
 
-            case 'ttok_fc':
+            case 'ttok_btn':
                 pass
-            case 'adcd_fc':
+            case 'adcd_btn':
                 pass
-            case 'set_pll_fc':
+            case 'set_pll_btn':
                 self.tts_tth_led.setColor(QColor('green')) \
                     if result else self.tts_tth_led.setColor(QColor('red'))
 
-            case 'scan_pll_fc':
-                card_number = self.fe_card.get_card_number(link=self.__link)
+            case 'scan_pll_btn':
+                card_number = get_card_number(link=self.__link)
                 file_number = self.get_file_number(test_name=TestsName.PLL)
-                with open(f'{self.get_path(TestsName.PLL)}/{file_number}-{card_number}.pll', 'a') as pf:
+                with open(Path(f'{self.get_path(TestsName.PLL)}', f'{file_number}-{card_number}.pll'), 'a') as pf:
                     for i in result:
                         pf.write(str(i) + '\n')
                         print(i)
@@ -282,14 +426,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.sh1_value_label.setText(result[0]['sh1'])
                 self.tts_tth_led.setColor(QColor('red'))
 
-            case 'tts_tth_fc':
+            case 'tts_tth_btn':
                 self.tts_tth_led.setColor(QColor('green')) \
                     if result else self.tts_tth_led.setColor(QColor('red'))
-            case 'ini_fc':
+            case 'ini_btn':
                 pass
 
-            case 'trstat_fc':
-                with open('current_fec_trstats.json', 'r') as f:
+            case 'trstat_btn':
+                with open(Path(DATA_DIR, 'current_fec_trstats.json'), 'r') as f:
                     data = json.load(f)
                     self.__card_number = data['card']
                     pll = dict({'sh0': str(data['sh0']), 'sh1': str(data['sh1'])})
@@ -297,11 +441,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     self.__cid = data['cid']
                     self.__rid = data['rid']
                     self.__mask = data['mask']
+                    self.set_sh1_spinbox.setValue(int(pll['sh1']))
+                    self.set_sh0_spinbox.setValue(int(pll['sh0']))
+
                     self.card_number_value_label.setText(str(self.__card_number))
                     self.pll_value_label.setText(str(self.__pll))
                     self.cid_value_label.setText(str(self.__cid))
                     self.rid_value_label.setText(str(self.__rid))
                     self.mask_value_label.setText(str(self.__mask))
+                    self.plot_card_firmware_lineEdit.setText(str(self.__cid))
                     if self.__card_number == 0:
                         self.trstat_led.setColor(QColor('red'))
                     else:
@@ -309,23 +457,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     self.plot_card_number_lineEdit.setText(str(self.__card_number))
                     # self.__plot_card_number = self.__card_number
                 path = self.get_path(test_name=TestsName.PLL)
-                fullname = path + f'{self.__card_number}_in_memory_pll.json'
-                if not os.path.exists(fullname):
-                    if not os.path.exists(path):
-                        os.makedirs(path)
-                    with open(fullname, 'w') as f:
-                        json.dump(pll, f)
+                fullname = Path(path, f'{self.__card_number}_in_memory_pll.json')
+                # if not os.path.exists(fullname):
+                #     if not os.path.exists(path):
+                #         os.makedirs(path)
+                path.mkdir(parents=True, exist_ok=True)
+                with open(fullname, 'w') as f:
+                    json.dump(pll, f)
             case _:
                 raise ValueError(f'{fec_func.__name__} is not appropriate')
 
-    def get_path(self, test_name: TestsName = TestsName.RAW) -> str:
-        return f'./runs/{self.__card_number}/{self.__enc_cdet}/{test_name.value}/'
+    def get_path(self, test_name: TestsName = TestsName.RAW) -> Path:
+        return Path(RUNS_DIR, f'{self.__card_number}', f'{self.__enc_cdet}', f'{test_name.value}')
 
     def get_file_number(self, test_name: TestsName = TestsName.RAW) -> int:
         path = self.get_path(test_name)
-        if not os.path.exists(path):
-            os.makedirs(path)
-        numfile = len(fnmatch.filter(os.listdir(path), '*.txt'))
+        path.mkdir(parents=True, exist_ok=True)
+        numfile = len(list(path.glob('*.txt')))
         match test_name.value:
             case TestsName.PLL.value:
                 return numfile + 1
@@ -346,11 +494,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         while runs_number:
             received_data = fecard.getff(link=link)
             print(f'Run #{nrun}, TTH>>{received_data[-3].decode()}\n')
-            wform = NWaveForm(raw_data=received_data[1:-34])
-            if not wform.check_data() and data_filter:
+            data = received_data[1:FW_DATA_LENGTH[f'{self.__cid}'] + 1]
+            wform = NWaveForm(data=data, firmware=f'{get_card_fw(link=link)}')
+            if not wform.is_valid() and data_filter:
                 runs_number += 1
             else:
-                ff.append(received_data[1:-34])
+                ff.append(data)
             runs_number -= 1
             nrun += 1
         return {'adcd': adcd, 'ff': ff}
@@ -362,11 +511,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         while runs_number:
             received_data = fecard.getff(link=link)
             print(f'Run #{nrun}, TTH>>{received_data[-3].decode()}\n')
-            wform = NWaveForm(raw_data=received_data[1:-34])
-            if not wform.check_data() and data_filter:
+            data = received_data[1:FW_DATA_LENGTH[f'{self.__cid}'] + 1]
+            wform = NWaveForm(data=data, firmware=f'{get_card_fw(link=link)}')
+            # print(len(data))
+            if not wform.is_valid() and data_filter:
                 runs_number += 1
             else:
-                ff.append(received_data[1:-34])
+                ff.append(data)
             runs_number -= 1
             nrun += 1
         return {'adcd': adcd, 'ff': ff}
@@ -390,11 +541,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             while runs_number:
                 received_data = fecard.getff(link=link)
                 print(f'Run #{nrun}, TTH>>{received_data[-3].decode()}\n')
-                wform = NWaveForm(raw_data=received_data[1:-34])
-                if not wform.check_data() and data_filter:
+                data = received_data[1:FW_DATA_LENGTH[f'{self.__cid}'] + 1]
+                wform = NWaveForm(data=data, firmware=f'{get_card_fw(link=link)}')
+                if not wform.is_valid() and data_filter:
                     runs_number += 1
                 else:
-                    ff[gen_channel - 1].append(received_data[1:-34])
+                    ff[gen_channel - 1].append(data)
                 runs_number -= 1
                 nrun += 1
             gen.set_output_state('OFF', channel=gen_channel)
@@ -407,7 +559,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         ampl_range = np.concatenate([np.linspace(0.02, 0.1, 9),
                                      np.linspace(0.15, 0.4, 6),
                                      np.linspace(0.45, 0.6, 16),
-                                     [2,]])
+                                     [2, ]])
         gen_channel = 1 if parity == 'even' else 2
         for ampl in range(len(ampl_range)):
             runs_number = 10
@@ -424,11 +576,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             while runs_number:
                 received_data = fecard.getff(link=link)
                 print(f'Run #{nrun}, TTH>>{received_data[-3].decode()}\n')
-                wform = NWaveForm(raw_data=received_data[1:-34])
-                if not wform.check_data() and data_filter:
+                data = received_data[1: FW_DATA_LENGTH[f'{self.__cid}'] + 1]
+                wform = NWaveForm(data=data, firmware=f'{get_card_fw(link=link)}')
+                if not wform.is_valid() and data_filter:
                     runs_number += 1
                 else:
-                    ff[ampl].append(received_data[1:-34])
+                    ff[ampl].append(data)
                 runs_number -= 1
                 nrun += 1
         return {'adcd': adcd, 'ff': ff}
@@ -489,10 +642,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     #     self.__plot_card_number = self.plot_card_number_lineEdit.text()
 
     # def plot_parity_activate(self, idx):
-        # self.__plot_parity = self.plot_parity_comboBox.itemText(idx)
+    # self.__plot_parity = self.plot_parity_comboBox.itemText(idx)
 
     # def plot_test_name_activate(self, idx):
-        # self.__plot_test_name = self.plot_test_name_comboBox.itemText(idx)
+    # self.__plot_test_name = self.plot_test_name_comboBox.itemText(idx)
 
     # def plot_cdet_activate(self, idx):
     #     self.__plot_cdet = self.plot_cdet_comboBox.itemText(idx)
@@ -502,29 +655,35 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.plot_cdet_comboBox.setCurrentIndex(idx)
         self.__plot_cdet = self.enc_cdet_comboBox.itemText(idx)
 
-    def plot_test_name_handler(self):
+    def plot_test_name_handler(self) -> Path:
         match self.plot_test_name_comboBox.currentText():
             case 'rms_pedestal' | 'raw':
-                return f'{self.plot_run_number_lineEdit.text()}-{self.plot_card_number_lineEdit.text()}.txt'
+                return Path(f'{self.plot_run_number_lineEdit.text()}-{self.plot_card_number_lineEdit.text()}.txt')
             case 'crosstalk':
-                return f'{self.plot_run_number_lineEdit.text()}-{self.plot_card_number_lineEdit.text()}-{self.plot_parity_comboBox.currentText()}-2pF.txt'
+                return Path(
+                    f'{self.plot_run_number_lineEdit.text()}-{self.plot_card_number_lineEdit.text()}-{self.plot_parity_comboBox.currentText()}-2pF.txt')
             case 'gain':
-                return f'{self.plot_run_number_lineEdit.text()}-{self.plot_card_number_lineEdit.text()}-{self.plot_parity_comboBox.currentText()}-2pF-{self.plot_amplitude_comboBox.currentText()}V.txt'
+                return Path(
+                    f'{self.plot_run_number_lineEdit.text()}-{self.plot_card_number_lineEdit.text()}-{self.plot_parity_comboBox.currentText()}-2pF-{self.plot_amplitude_comboBox.currentText()}V.txt')
             case _:
                 raise ValueError(f'No such test: {self.plot_test_name_comboBox.currentText()}')
                 # return None
 
     def update_plots_windows(self):
         filename = self.plot_test_name_handler()
-        fullpath = (f'runs/'
-                    f'{self.plot_card_number_lineEdit.text()}/'
-                    f'{self.plot_cdet_comboBox.currentText()}/'
-                    f'{self.plot_test_name_comboBox.currentText()}/'
-                    f'{filename}')
-        if os.path.exists(fullpath):
+        fullpath = Path(RUNS_DIR,
+                        self.plot_card_number_lineEdit.text(),
+                        self.plot_cdet_comboBox.currentText(),
+                        self.plot_test_name_comboBox.currentText(),
+                        filename)
+        if fullpath.exists():
             try:
-                self.waveform_window.update_plot(filename=fullpath, event=int(self.plot_event_number_lineEdit.text()))
-                self.rms_window.update_plot(filename=fullpath, event=int(self.plot_event_number_lineEdit.text()))
+                self.waveform_window.update_plot(filename=fullpath,
+                                                 event=int(self.plot_event_number_lineEdit.text()),
+                                                 firmware=self.plot_card_firmware_lineEdit.text())
+                self.rms_window.update_plot(filename=fullpath,
+                                            event=int(self.plot_event_number_lineEdit.text()),
+                                            firmware=self.plot_card_firmware_lineEdit.text())
                 self.plot_file_exist_label.setText(f'{fullpath} has been plotted')
                 self.plot_file_exist_label.setStyleSheet('color: green;')
             except ValueError as e:
@@ -552,23 +711,31 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                                      "Are you sure to quit?", QMessageBox.Yes, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
-            self.fe_card.tln.write('!\r\n'.encode('utf-8'))
-            self.fe_card.tln.close()
+            if self.fe_card is not None:
+                self.fe_card.tln.write('!\r\n'.encode('utf-8'))
+                self.fe_card.tln.close()
+                self.gen.close()
+
             self.waveform_window.close()
             self.rms_window.close()
+            print(f'RCU has been closed')
+            print(f'GEN has been closed')
+
             event.accept()
         else:
             event.ignore()
 
 
-try:
-    # np.set_printoptions(linewidth=1000, threshold=np.inf)
+if __name__ == '__main__':
+    try:
+        # np.set_printoptions(linewidth=1000, threshold=np.inf)
 
-    app = QApplication(sys.argv)
-    w = MainWindow()
-    app.exec()
-except Exception as e:
-    print(e)
-    print(traceback.format_exc())
-finally:
-    print(f'RCU has been closed')
+        app = QApplication(sys.argv)
+        w = MainWindow()
+        app.exec()
+        # print('After EXEC')
+    except Exception as e:
+        print(e)
+        print(traceback.format_exc())
+    finally:
+        print(f'Quite')

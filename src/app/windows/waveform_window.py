@@ -1,15 +1,17 @@
 import sys
+from pathlib import Path
+
 from PySide6 import QtWidgets
 import matplotlib
-from PySide6.QtWidgets import QWidget, QMainWindow
+from PySide6.QtWidgets import QMainWindow
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qtagg import (
     NavigationToolbar2QT as NavigationToolbar,
 )
-from matplotlib.figure import Figure
-from matplotlib.pyplot import subplots, plot
+from matplotlib.pyplot import subplots
 
-from waveform import NWaveForm
+from app.config import RUNS_DIR, DATA_DIR
+from app.logic.data_structure.factory import NWaveForm
 
 matplotlib.use("QtAgg")
 
@@ -67,15 +69,15 @@ class WaveFormWindow(QMainWindow):
         widget.setLayout(layout)
         self.setCentralWidget(widget)
 
-    def update_plot(self, filename, event: int = -1):
-        a = NWaveForm(full_filename=filename, event=event)
+    def update_plot(self, filename: Path, firmware, event: int = -1):
+        a = NWaveForm(data=filename, firmware=firmware, event=event)
         self.waveform_canvas.figure.suptitle(f'WaveForm from {filename}')
 
         for row in range(64):
             self.waveform_canvas.figure.axes[row].cla()
-            self.waveform_canvas.figure.axes[row].plot(a.waveform_data
+            self.waveform_canvas.figure.axes[row].plot(a.data
                                                        .transpose(1, 0, 2)
-                                                       .reshape(a.waveform_data.shape[1], -1)[row], 'o', ms=2)
+                                                       .reshape(a.data.shape[1], -1)[row], 'o', ms=2)
 
             self.waveform_canvas.figure.axes[row].set_xlabel('time, sample (x100ns)')
             self.waveform_canvas.figure.axes[row].set_ylabel('ADC channel')
@@ -99,9 +101,9 @@ class RMSWindow(QMainWindow):
         widget.setLayout(layout)
         self.setCentralWidget(widget)
 
-    def update_plot(self, filename, event: int = -1):
+    def update_plot(self, filename, firmware, event: int = -1):
         self.rms_canvas.figure.suptitle(f'RMS from {filename}')
-        a = NWaveForm(full_filename=filename, event=event)
+        a = NWaveForm(data=filename,firmware=firmware, event=event)
 
         for row in range(64):
             self.rms_canvas.figure.axes[0].cla()
@@ -116,6 +118,6 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     # w = WaveFormWindow()
     w = RMSWindow()
-    w.update_plot(filename='runs/385/4-385.txt')
+    w.update_plot(filename=Path(DATA_DIR, 'runs_old_to_11_09_24/454/0pF/raw/4-454.txt'), firmware='0x63040400')
     w.show()
     app.exec()

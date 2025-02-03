@@ -2,7 +2,7 @@ import sys
 from PySide6.QtWidgets import QApplication, QWidget
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter, QColor
-import random
+# import random
 
 
 class ColoredCircleWidget(QWidget):
@@ -55,15 +55,11 @@ def main():
     # Create an instance of the ColoredCircleWidget
     widget = ColoredCircleWidget(circle_color=QColor(0, 0, 255))
     widget.setWindowTitle("Custom Widget: Colored Circle - Click on it")
-    widget.setColor(Qt.white)
+    widget.setColor(QColor('green'))
 
-    # Set the widget's size
     widget.setGeometry(100, 100, 300, 300)
-
-    # Show the widget
     widget.show()
 
-    # Run the application's event loop
     sys.exit(app.exec())
 
 

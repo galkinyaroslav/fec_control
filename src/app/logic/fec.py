@@ -7,26 +7,28 @@ import sys
 import telnetlib
 import time
 import traceback
+from pathlib import Path
 from time import perf_counter
 
 import numpy as np
 
-from waveform import NWaveForm
+from app.config import DATA_DIR, RUNS_DIR, TEMP_DIR
+from app.logic.data_structure.factory import NWaveForm
 
 
-class SampaNumber(enum.Enum):
+class BankNumber(enum.Enum):
     ZERO: int = 0
     FIRST: int = 1
 
 
 class TestsName(enum.Enum):
-    CROSSTALK: str = 'crosstalk'
+    # CROSSTALK: str = 'crosstalk'
     # ENC: str = 'enc'
     GAIN: str = 'gain'
     PLL: str = 'pll'
     RAW: str = 'raw'
     RMS_PEDESTAL: str = 'rms_pedestal'
-    WORKED_CHANNEL: str = 'worked_channel'
+    # WORKED_CHANNEL: str = 'worked_channel'
 
 
 def color_print(message: str, font: str = 'w', background: str = 'd'):
@@ -49,13 +51,63 @@ def oscmd(cmd):
     return ret
 
 
-class FEC():
+def get_card_pll(link: int, single: bool = True) -> tuple:
+    link = str(link)
+    if single:
+        with open(Path(DATA_DIR,'current_fec_trstats.json'), 'r') as f:
+            data = json.load(f)
+            return data['sh0'], data['sh1']
+    else:
+        with open(Path(DATA_DIR,'roc_link_map.json'), 'r') as f:
+            data = json.load(f)
+            return data[link]['sh0'], data[link]['sh1']
+
+
+def get_card_fw(link: int = 0, single: bool = True) -> str:
+    if single:
+        with open(Path(DATA_DIR, 'current_fec_trstats.json'), 'r') as f:
+            data = json.load(f)
+            return data['cid']
+    else:
+        with open(Path(DATA_DIR, 'roc_link_map.json'), 'r') as f:
+            link = str(link)
+            data = json.load(f)
+            return data[link]['cid']
+
+
+def get_card_number(link: int = 0, single: bool = True) -> int:
+    if single:
+        with open(Path(DATA_DIR, 'current_fec_trstats.json'), 'r') as f:
+            data = json.load(f)
+            return data['card']
+    else:
+        with open(Path(DATA_DIR, 'roc_link_map.json'), 'r') as f:
+            link = str(link)
+            data = json.load(f)
+            return data[link]['card']
+
+
+def get_file_number(card_number: int, test_name: TestsName = TestsName.RAW) -> int:
+    path = Path(RUNS_DIR, f'{card_number}', test_name.value)
+    Path(path).mkdir(parents=True, exist_ok=True)
+    return len(list(path.iterdir())) + 1
+
+
+class FEC:
+    def __new__(cls, host='192.168.1.235', port=30):
+        try:
+            instance = super().__new__(cls)
+            instance.tln = telnetlib.Telnet(timeout=10)
+            instance.tln.open(host=host, port=port)
+            print(instance.tln.read_until('return:\n\r'.encode('utf-8')).decode('utf-8'))
+            return instance
+        except OSError as e:
+            print(f'{e}')
+            return None
+
     def __init__(self, host='192.168.1.235', port=30):
         self.__host = host
         self.__port = port
-        self.tln = telnetlib.Telnet(timeout=10)
-        self.tln.open(host=self.__host, port=self.__port)
-        print(self.tln.read_until('return:\n\r'.encode('utf-8')).decode('utf-8'))
 
     def ttok(self, command: str, printing: bool = True) -> bytes:
         result = self.transaction(f'ttok ;{command};', printing=printing)
@@ -122,7 +174,6 @@ class FEC():
                       f'kmslkw 0xff {link};'  # set k 0;kmsffw 0x0 $k; kmslkw 0x0 $k;
                       f'getsetpll {link};'
                       f'cff;')
-            # # TODO check setpll sp0 sp1:
             # sh0, sh1 = get_card_pll(link)
             # ttok(f'setpll {sh0} {sh1}')
             # return
@@ -181,40 +232,12 @@ class FEC():
 
         return svnarr
 
-    def get_file_number(self, card_number: int, test_name: TestsName = TestsName.RAW) -> int:
-        path = f'runs/{card_number}/{test_name.value}/'
-        if not os.path.exists(path):
-            os.makedirs(path)
-        return len(os.listdir(path)) + 1
-
-    def get_card_number(self, link: int = 0, single: bool = True) -> int:
-        if single:
-            with open('current_fec_trstats.json', 'r') as f:
-                data = json.load(f)
-                return data['card']
-        else:
-            with open('roc_link_map.json', 'r') as f:
-                link = str(link)
-                data = json.load(f)
-                return data[link]['card']
-
-    def get_card_pll(self, link: int, single: bool = True) -> tuple:
-        link = str(link)
-        if single:
-            with open('current_fec_trstats.json', 'r') as f:
-                data = json.load(f)
-                return data['sh0'], data['sh1']
-        else:
-            with open('roc_link_map.json', 'r') as f:
-                data = json.load(f)
-                return data[link]['sh0'], data[link]['sh1']
-
     def getff(self, link: int) -> list[bytes]:
         return self.ttok(f'wmsk 0xffffffff;'
                          f'car {link};'
                          f'tth 1;'
-                         f'getdd {SampaNumber.ZERO.value};'
-                         f'getdd {SampaNumber.FIRST.value}', False).split(b',')
+                         f'getdd {BankNumber.ZERO.value};'
+                         f'getdd {BankNumber.FIRST.value}', False).split(b',')
 
     def getffw(self, link: int,
                runs_number: int = 1,
@@ -222,26 +245,26 @@ class FEC():
                data_filter: bool = True,
                test_name: TestsName = TestsName.RAW) -> None:
         # ttok(f'car {link}')
-        card_number = self.get_card_number(link=link, single=single)
+        card_number = get_card_number(link=link, single=single)
         file_number = int(
-            self.get_file_number(card_number, test_name=test_name))  # TODO придумать как передавать имя теста 1
+            get_file_number(card_number, test_name=test_name))  # TODO придумать как передавать имя теста 1
         file_name = f'{file_number}-{card_number}.txt'
         print(f'Initiated run')
         print(f'Card number: {card_number}, file name: {file_name}, run: {file_number}')
-        with open('events.lst', 'w') as events_file:
+        with open(Path(TEMP_DIR,'events.lst'), 'w') as events_file:
             nrun = 1
             while runs_number:
                 received_data = self.getff(link=link)
                 # print(f'{received_data=}')
                 print(f'Run #{nrun}, TTH>>{received_data[-3].decode()}\n')
-                wform = NWaveForm(raw_data=received_data[1:-34])
-                if not wform.check_data() and data_filter:
+                wform = NWaveForm(data=received_data[1:-34], firmware=get_card_fw(link=link))
+                if not wform.is_valid() and data_filter:
                     runs_number += 1
                 else:
                     events_file.write((b' '.join(b'0x' + word for word in received_data[1:-34]) + b'\n').decode())
                 runs_number -= 1
                 nrun += 1
-        path = f'./runs/{card_number}/{test_name.value}'
+        path = Path(RUNS_DIR, f'{card_number}', f'{test_name.value}')
         oscmd(
             f'mkdir -p {path} && cp events.lst {path}/{file_name}')
         return
@@ -274,7 +297,7 @@ class FEC():
         except Exception as e:
             print(e)
 
-        with open('current_fec_trstats.json', 'w') as f:
+        with open(Path(DATA_DIR,'current_fec_trstats.json'), 'w') as f:
             json.dump(fec_trstats, f)
         return fec_trstats
 
@@ -282,7 +305,7 @@ class FEC():
         roc_link_map = {}
         for link in range(31):
             roc_link_map.update({link: self.get_trstat(link)})
-        with open('roc_link_map.json', 'w') as f:
+        with open(Path(DATA_DIR,'roc_link_map.json'), 'w') as f:
             json.dump(roc_link_map, f)
         return roc_link_map
 
@@ -348,15 +371,14 @@ class FEC():
 
 def adcd_all_writable(part:str):
     # ACDC ALL WITH WRITING TO FILE
-    import openpyxl
     import pandas as pd
     # wb = openpyxl.Workbook()
     # ws = wb.active
     # ws.title = 'fec temperatures'
 
-    path = './INP_ROC'
-    if not os.path.exists(path):
-        os.makedirs(path)
+    path = Path(DATA_DIR,'INP_ROC')
+    path.mkdir(parents=True, exist_ok=True)
+
     time_now = datetime.datetime.now()
     try:
         data_dict = dict()
@@ -378,7 +400,7 @@ def adcd_all_writable(part:str):
             adcd_df = pd.DataFrame(measurements, columns=header)  # Преобразуем np.ndarray в DataFrame
             adcd_df['link'] = link  # Добавляем столбец с названием датчика
             df = pd.concat([df, adcd_df], ignore_index=True)
-        df.to_excel(f'{path}/{time_now.strftime("%Y-%m-%d_%H-%M-%S")}_{part}.xlsx', index=False)
+        df.to_excel(Path(f'{time_now.strftime("%Y-%m-%d_%H-%M-%S")}_{part}.xlsx'), index=False)
     except Exception as e:
         print(e)
     finally:
@@ -403,12 +425,17 @@ if __name__ == "__main__":
 
     try:
         np.set_printoptions(linewidth=1000, threshold=np.inf)
-        # link = 31
+        link = 7
         # f.ttok(f'wmsk 0xffffffff')
-        # f.get_trstat(link=link)
-        # f.ini(link=link)
-        # asd = f.adcd(link=link, n=10)
-        # f.getffw(link=link, runs_number=1, single=True)
+        narrow.get_trstat(link=link)
+        narrow.ini(link=link)
+        narrow.get_tts_tth(link=link)
+        narrow.adcd(link=link, n=3)
+        a =narrow.getff(link=link)
+        print(a)
+        # plldict = narrow.scan_card_pll(link=link)
+        # narrow.set_card_pll(link=link, sh0=10, sh1=12)
+        # narrow.get_tts_tth(link=link)
 
         # acdc_all_writable()
 
@@ -436,7 +463,7 @@ if __name__ == "__main__":
         # for i in range(31):
         #     narrow.get_trstat(link=i)
         # narrow.getffw(link=10, runs_number=100)
-        narrow.getffw_all(runs_number=100)
+        # narrow.getffw_all(runs_number=100)
     except Exception as e:
         print(e)
         print(traceback.format_exc())

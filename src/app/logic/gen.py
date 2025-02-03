@@ -1,29 +1,54 @@
+from typing import Type
+
 import pyvisa
 
 
-class AFG3152C():
-    def __init__(self):
-        self.__DEVICE_NAME = 'AFG3152C'
-        self.__rm = pyvisa.ResourceManager()  # '/usr/lib/x86_64-linux-gnu/libiovisa.so')
-        self.__inst = self.find_inst()
+class AFG3152C:
+    def __new__(cls):
+        instance = super().__new__(cls)
+        instance.__rm = pyvisa.ResourceManager()
 
-    def find_inst(self):
-        list_res = self.__rm.list_resources()
+        instance.__DEVICE_NAME = 'AFG3152C'
+        temp = cls.find_inst(rm=instance.__rm, device_name=instance.__DEVICE_NAME)
+        if temp is None:
+            return None
+        instance.__inst = temp
+        return instance
+
+    def __init__(self):
+        pass
+        # self.__DEVICE_NAME = 'AFG3152C'
+        # self.__rm = pyvisa.ResourceManager()  # '/usr/lib/x86_64-linux-gnu/libiovisa.so')
+        # self.__inst = self.find_inst()
+
+    @property
+    def inst(self):
+        return self.__inst
+
+    def close(self):
+        self.__inst.close()
+        self.__rm.close()
+
+    @staticmethod
+    def find_inst(rm: pyvisa.ResourceManager, device_name: str) -> pyvisa.resources.Resource | None:
+        list_res = rm.list_resources()
         print(list_res)
 
         # ('ASRL1::INSTR', 'ASRL2::INSTR', 'GPIB0::12::INSTR')
         devices = [i for i in list_res if 'TCPIP' in i]
         for instrument in devices:
             try:
-                temp_device = self.__rm.open_resource(instrument)
+                temp_device = rm.open_resource(instrument)
                 temp_name = temp_device.query("*IDN?")
-                if self.__DEVICE_NAME in temp_name:
+                if device_name in temp_name:
                     print(temp_name.strip(), '--->>>', instrument)
                     return temp_device
                 else:
                     temp_device.close()
             except pyvisa.errors.VisaIOError:
                 print('This is not appropriate device or device is not found')
+        return None
+
 
     def rst(self):
         self.__inst.write('*RST')
@@ -86,7 +111,7 @@ class AFG3152C():
         self.set_pulse_tran(lead=3, trail=3, units='ns')
 
         self.set_volt_low(0)
-        self.set_volt_high(0.02)
+        self.set_volt_high(0.2)
 
         self.set_burst_state('ON')
         self.set_burst_mode('TRIG')
@@ -104,7 +129,7 @@ class AFG3152C():
         self.set_pulse_tran(lead=3, trail=3, units='ns', channel=2)
 
         self.set_volt_low(0, channel=2)
-        self.set_volt_high(0.02, channel=2)
+        self.set_volt_high(0.2, channel=2)
 
         self.set_burst_state('ON', channel=2)
         self.set_burst_mode('TRIG', channel=2)
