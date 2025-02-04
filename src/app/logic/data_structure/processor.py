@@ -89,6 +89,7 @@ class FirmwareProcessor0x24040800(BaseDataProcessor):
     def __init__(self, data, firmware: str, event: int = -1):
         super().__init__(data, firmware, event)
         self._int_data = self.reduce_headers(self._int_data)
+        self._valid_data_structure: bool = True
         # print(f'{self._int_data=}')
 
     def reduce_headers(self, data: np.ndarray) -> np.ndarray:
@@ -101,22 +102,32 @@ class FirmwareProcessor0x24040800(BaseDataProcessor):
             card_header_first = fw_0x64040800.CardHeaderFirst(word=data_deque.popleft())
             card_header_second = fw_0x64040800.CardHeaderSecond(word=data_deque.popleft())
             # print(f'{card_header_first=}', card_header_second)
-            while len(data_deque) > 0:
-                temp = fw_0x64040800.LinkHeader(word=data_deque.popleft())
-                # print(temp)
-                link = temp.link_number
-                link_dict[f'lh{link}'] = temp
-                # print(f'{link=}, {link_dict[f'lh{link}'].usedw_n=}')
-                # time.sleep(2)
-                link_data_dict[f'{link}'] = [data_deque.popleft() for _ in range(link_dict[f'lh{link}'].usedw_n)]
-            # print(link_data_dict)
-            data_list.append(list(chain.from_iterable(link_data_dict.values())))
-            # np_data = np.array([[link_data_dict[f'{lk}'][:, :, 5:]] for lk in range(len(link_data_dict))], dtype=np.uint16)
-
+            try:
+                while len(data_deque) > 0:
+                    temp = fw_0x64040800.LinkHeader(word=data_deque.popleft())
+                    # print(temp)
+                    link = temp.link_number
+                    link_dict[f'lh{link}'] = temp
+                    # print(f'{link=}, {link_dict[f'lh{link}'].usedw_n=}')
+                    # time.sleep(2)
+                    link_data_dict[f'{link}'] = [data_deque.popleft() for _ in range(link_dict[f'lh{link}'].usedw_n)]
+                # print(link_data_dict)
+                data_list.append(list(chain.from_iterable(link_data_dict.values())))
+                # np_data = np.array([[link_data_dict[f'{lk}'][:, :, 5:]] for lk in range(len(link_data_dict))], dtype=np.uint16)
+            except IndexError:
+                print(f'Data is corrupted')
+                self._valid_data_structure = False
             # print(f'{len(np_data)=},{np_data=}')
         # for i in data_list:
         #     print(f'{i=}')
         return np.array(data_list)
+
+    def validate(self) -> bool:
+        """Проверяет, соответствуют ли данные условиям"""
+        # if self._processed_data is None:
+        #     raise ValueError("Data is None")
+        condition = self._links_data[:, :, 1] == 31
+        return np.all(condition).item() and self._valid_data_structure
 
 
 class FirmwareProcessor0x23040400(BaseDataProcessor):
