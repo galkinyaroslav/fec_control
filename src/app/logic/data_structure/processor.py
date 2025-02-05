@@ -13,29 +13,43 @@ class BaseDataProcessor(ABC):
         self.firmware_version = firmware_version
         self.data = data
         self.event = event
-        self._int_data = self.get_int_data(self.data)
-        self._links_data = None
+        self._valid_data_structure : bool = True
+        self._int_data = None# self.get_int_data(self.data)
+        self._links_data = None# self.get_links_data()
         self._waveform_data = None
 
     def get_max_value(self):
-        return self._waveform_data.max(axis=(0, 2))
+        if self._valid_data_structure:
+            return self._waveform_data.max(axis=(0, 2))
+        else:
+            return None
 
-    def get_waveform_data(self) -> np.ndarray:
+    def get_waveform_data(self) -> np.ndarray | None:
         """compute data"""
-        self._waveform_data = self.get_links_data()[:, :, 5:]
-        return  self._waveform_data
+        if self._valid_data_structure:
+            self._waveform_data = self._links_data[:, :, 5:]
+            return  self._waveform_data
+        else:
+            return None
 
     def get_rms(self) -> np.array:
         # if self._processed_data is None:
         #     raise ValueError("Data is None")
-        return self._waveform_data.std(axis=(0, 2), ddof=1)
+        if self._valid_data_structure:
+            return self._waveform_data.std(axis=(0, 2), ddof=1)
+        else:
+            return None
 
     def validate(self) -> bool:
         """Проверяет, соответствуют ли данные условиям"""
         # if self._processed_data is None:
         #     raise ValueError("Data is None")
-        condition = self._links_data[:, :, 1] == 31
-        return np.all(condition).item()
+        if self._valid_data_structure:
+            condition = self._links_data[:, :, 1] == 31
+            return np.all(condition).item()
+        else:
+            return False
+
     @staticmethod
     def get_int(hex_values) -> np.array:
         return [int(value, 16) for value in hex_values]
@@ -66,43 +80,53 @@ class BaseDataProcessor(ABC):
 
         return np.array(data_list,)
 
-    def get_links_data(self) -> np.ndarray:
-        result_array_3d = np.zeros((self._int_data.shape[0],
-                                    self._int_data.shape[1] // 12,
-                                    self._int_data.shape[1] // 64 * 3), dtype=np.uint16)
-        for i in range(result_array_3d.shape[0]):
-            for j in range(result_array_3d.shape[1]):
-                for k in range(result_array_3d.shape[2] // 3):
-                    val = self._int_data[i, 12 * j + k]
-                    d0 = val & 0x3ff
-                    d1 = (val >> 10) & 0x3ff
-                    d2 = (val >> 20) & 0x3ff
-                    result_array_3d[i, j, 3 * k] = d0
-                    result_array_3d[i, j, 3 * k + 1] = d1
-                    result_array_3d[i, j, 3 * k + 2] = d2
-        self._links_data = result_array_3d
-        return result_array_3d
+    def get_links_data(self) -> np.ndarray | None:
+        if self._valid_data_structure:
+            try:
+                result_array_3d = np.zeros((self._int_data.shape[0],
+                                            self._int_data.shape[1] // 12,
+                                            self._int_data.shape[1] // 64 * 3), dtype=np.uint16)
+                for i in range(result_array_3d.shape[0]):
+                    for j in range(result_array_3d.shape[1]):
+                        for k in range(result_array_3d.shape[2] // 3):
+                            val = self._int_data[i, 12 * j + k]
+                            d0 = val & 0x3ff
+                            d1 = (val >> 10) & 0x3ff
+                            d2 = (val >> 20) & 0x3ff
+                            result_array_3d[i, j, 3 * k] = d0
+                            result_array_3d[i, j, 3 * k + 1] = d1
+                            result_array_3d[i, j, 3 * k + 2] = d2
+                self._links_data = result_array_3d
+                return result_array_3d
+            except IndexError as e:
+                print(f'{e}')
+                return None
+        else:
+            return None
 
 
 
 class FirmwareProcessor0x24040800(BaseDataProcessor):
     def __init__(self, data, firmware: str, event: int = -1):
         super().__init__(data, firmware, event)
+        self._int_data = self.get_int_data(self.data)
         self._int_data = self.reduce_headers(self._int_data)
-        self._valid_data_structure: bool = True
+        self._links_data = self.get_links_data()
+
         # print(f'{self._int_data=}')
 
     def reduce_headers(self, data: np.ndarray) -> np.ndarray:
         data_list = []
-        for line in range(len(data)):
-            link_data_dict: dict = dict()
-            link_dict: dict = dict()
-            data_deque = deque(data[line])
-            # print(len(data_deque))
-            card_header_first = fw_0x64040800.CardHeaderFirst(word=data_deque.popleft())
-            card_header_second = fw_0x64040800.CardHeaderSecond(word=data_deque.popleft())
-            # print(f'{card_header_first=}', card_header_second)
-            try:
+        try:
+
+            for line in range(len(data)):
+                link_data_dict: dict = dict()
+                link_dict: dict = dict()
+                data_deque = deque(data[line])
+                # print(len(data_deque))
+                card_header_first = fw_0x64040800.CardHeaderFirst(word=data_deque.popleft())
+                card_header_second = fw_0x64040800.CardHeaderSecond(word=data_deque.popleft())
+                # print(f'{card_header_first=}', card_header_second)
                 while len(data_deque) > 0:
                     temp = fw_0x64040800.LinkHeader(word=data_deque.popleft())
                     # print(temp)
@@ -114,23 +138,33 @@ class FirmwareProcessor0x24040800(BaseDataProcessor):
                 # print(link_data_dict)
                 data_list.append(list(chain.from_iterable(link_data_dict.values())))
                 # np_data = np.array([[link_data_dict[f'{lk}'][:, :, 5:]] for lk in range(len(link_data_dict))], dtype=np.uint16)
-            except IndexError:
-                print(f'Data is corrupted')
-                self._valid_data_structure = False
+        except IndexError:
+            print(f'Data from queue is corrupted')
+            self._valid_data_structure = False
             # print(f'{len(np_data)=},{np_data=}')
         # for i in data_list:
         #     print(f'{i=}')
-        return np.array(data_list)
+        finally:
+            return np.array(data_list,)
 
     def validate(self) -> bool:
         """Проверяет, соответствуют ли данные условиям"""
         # if self._processed_data is None:
         #     raise ValueError("Data is None")
-        condition = self._links_data[:, :, 1] == 31
-        return np.all(condition).item() and self._valid_data_structure
+        if not self._valid_data_structure:
+            return False
+        try:
+            condition = self._links_data[:, :, 1] == 31
+        except IndexError:
+            return False
+        except TypeError:
+            return False
+        else:
+            return np.all(condition).item()
 
 
 class FirmwareProcessor0x23040400(BaseDataProcessor):
     def __init__(self, data, firmware: str, event: int = -1):
         super().__init__(data, firmware, event)
-        # print(f'{self._int_data=}')
+        self._int_data = self.get_int_data(self.data)
+        self._links_data = self.get_links_data()
