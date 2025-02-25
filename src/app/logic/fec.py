@@ -221,7 +221,7 @@ class FEC:
                 ar[11] = float(ar[11]) / 2.5
                 ar[13] = float(ar[13]) / 20
                 ar[14] = float(ar[14]) / 2.5
-                svn = ['%2.1f' % val for val in ar]
+                svn = [val for val in ar]
                 # sout = '      %s    %s   %s   %s   %s    %s      %s   %s   %s     %s    %s   %s    %s   %s      %s    %s  ' % \
                 #        (svn[0], svn[1], svn[2], svn[3], svn[4], svn[5], svn[6], svn[7], svn[8], svn[9],
                 #         svn[10], svn[11], svn[12], svn[13], svn[14], svn[15])

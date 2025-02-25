@@ -79,7 +79,7 @@ class SlowControl:
         colored_values = []
         for key, (value, is_valid) in merged_dict.items():
             color = Fore.RED if not is_valid else Fore.GREEN
-            colored_values.append(f'{color}{value}{Style.RESET_ALL}')
+            colored_values.append(f'{color}{'%2.1f' % value}{Style.RESET_ALL}')
 
         # Make and print colored string
         sout = '      %s    %s   %s   %s   %s    %s      %s   %s   %s     %s    %s   %s    %s   %s      %s    %s  ' % \
