@@ -54,11 +54,11 @@ def oscmd(cmd):
 def get_card_pll(link: int, single: bool = True) -> tuple:
     link = str(link)
     if single:
-        with open(Path(DATA_DIR,'current_fec_trstats.json'), 'r') as f:
+        with open(Path(DATA_DIR, 'current_fec_trstats.json'), 'r') as f:
             data = json.load(f)
             return data['sh0'], data['sh1']
     else:
-        with open(Path(DATA_DIR,'roc_link_map.json'), 'r') as f:
+        with open(Path(DATA_DIR, 'roc_link_map.json'), 'r') as f:
             data = json.load(f)
             return data[link]['sh0'], data[link]['sh1']
 
@@ -141,43 +141,42 @@ class FEC:
             # ttok(f'wxv 0x904 0x1 {link};wxv 0x904 0x3 {link}')
             self.ttok(f'wxv 0x904 0x3 {link}')
             color_print(f'===> New SAMPAS power status = {powst.decode()}', background='y')
+            print('')
         elif powst == b'0x40000000':
             self.ttok(f'wxv 0x904 0x1 {link}')
             time.sleep(1)
             self.ttok(f'wxv 0x904 0x3 {link}')
             # ttok(f'wxv 0x904 0x3 {link}')
-
             color_print(f'===> New SAMPAS power status = {powst.decode()}', background='g')
+            print('')
         else:
             color_print(f'===> SOME ERROR {powst_full.decode()}', background='r')
+            print('')
 
     def ini(self, link=1, fini=''):
         self.ttok(f'wmsk 0xffffffff;car {link}')
         self.power_on(link=link)
         if fini == '':
-            self.ttok(f'wsa 13 30 {link};'
-                      f'wsa 77 30 {link};'  # VACFG
-                      f'wsa 7 30 {link};'
-                      f'wsa 8 0 {link};'  # TWLen.0
-                      f'wsa 71 30 {link};'
-                      f'wsa 72 0 {link};'  # TWLen.1
-                      f'wsa 9 0 {link};'
-                      f'wsa 10 0 {link};'
-                      f'wsa 73 0 {link};'
-                      f'wsa 74 0 {link};'  # AQStart
-                      f'wsa 11 30 {link};'
-                      f'wsa 12 0 {link};'
-                      f'wsa 75 30 {link};'
-                      f'wsa 76 0 {link};'  # AQStop
-                      f'wxv 0x944 0x6600 {link};'  # #  wxv   0x944 0x6600 0;
-                      f'kmsffw 0x0 {link};'
-                      f'kmslkw 0xff {link};'  # set k 0;kmsffw 0x0 $k; kmslkw 0x0 $k;
-                      f'getsetpll {link};'
-                      f'cff;')
-            # sh0, sh1 = get_card_pll(link)
-            # ttok(f'setpll {sh0} {sh1}')
-            # return
-            #
+            self.ttok(f'wsa 13 30 {link};')
+            self.ttok(f'wsa 77 30 {link};')  # VACFG
+            self.ttok(f'wsa 7 30 {link};')
+            self.ttok(f'wsa 8 0 {link};')  # TWLen.0
+            self.ttok(f'wsa 71 30 {link};')
+            self.ttok(f'wsa 72 0 {link};')  # TWLen.1
+            self.ttok(f'wsa 9 0 {link};')
+            self.ttok(f'wsa 10 0 {link};')
+            self.ttok(f'wsa 73 0 {link};')
+            self.ttok(f'wsa 74 0 {link};')  # AQStart
+            self.ttok(f'wsa 11 30 {link};')
+            self.ttok(f'wsa 12 0 {link};')
+            self.ttok(f'wsa 75 30 {link};')
+            self.ttok(f'wsa 76 0 {link};')  # AQStop
+            self.ttok(f'wxv 0x944 0x6600 {link};')  # #  wxv   0x944 0x6600 0;
+            self.ttok(f'kmsffw 0x0 {link};')
+            self.ttok(f'kmslkw 0xff {link};')  # set k 0;kmsffw 0x0 $k; kmslkw 0x0 $k;
+            self.ttok(f'getsetpll {link};')
+            self.ttok(f'cff;')
+
         if fini == 'ini.txt':
             print(" Load from file ...")
             scri = oscmd("cat ini.txt")
@@ -251,7 +250,7 @@ class FEC:
         file_name = f'{file_number}-{card_number}.txt'
         print(f'Initiated run')
         print(f'Card number: {card_number}, file name: {file_name}, run: {file_number}')
-        with open(Path(TEMP_DIR,'events.lst'), 'w') as events_file:
+        with open(Path(TEMP_DIR, 'events.lst'), 'w') as events_file:
             nrun = 1
             while runs_number:
                 received_data = self.getff(link=link)
@@ -297,7 +296,7 @@ class FEC:
         except Exception as e:
             print(e)
 
-        with open(Path(DATA_DIR,'current_fec_trstats.json'), 'w') as f:
+        with open(Path(DATA_DIR, 'current_fec_trstats.json'), 'w') as f:
             json.dump(fec_trstats, f)
         return fec_trstats
 
@@ -305,7 +304,7 @@ class FEC:
         roc_link_map = {}
         for link in range(31):
             roc_link_map.update({link: self.get_trstat(link)})
-        with open(Path(DATA_DIR,'roc_link_map.json'), 'w') as f:
+        with open(Path(DATA_DIR, 'roc_link_map.json'), 'w') as f:
             json.dump(roc_link_map, f)
         return roc_link_map
 
@@ -319,9 +318,6 @@ class FEC:
         # print(f'{b=}')
         c = [int(''.join(re.findall(r'\d', i))) for i in b]
         return True if 0 <= (c[0] | c[1]) <= 1 else False
-
-
-
 
     def get_tts_tth_all(self) -> None:
         for i in range(31):
@@ -348,19 +344,12 @@ class FEC:
             self.power_on(link=link)
 
     def scan_card_pll(self, link: int = 0) -> dict:
-        # self.ttok(f'car {link}')
-        # self.get_trstat(link)
-        # card_number = self.get_card_number(link)
-        # file_number = self.get_file_number(card_number=card_number, test_name=TestsName.PLL)
-        # for i in range(runs_old_to_11_09_24):
-        #     with (open(f'{file_number}-{card_number}.pll', 'a') as pf):
+
         self.ttok(f'car {link}')
         pll = self.ttok('scpll0; scpll1').replace(b',', b'').split(b' ')
         pll_dict = dict()
         pll_dict['sh0'] = bin(int(pll[3], 16))
         pll_dict['sh1'] = bin(int(pll[7], 16))
-            # pf.write(str(pll_dict) + '\n')
-            # print(pll_dict)
         return pll_dict
 
     def set_card_pll(self, link: int = 0, sh0: int = 0, sh1: int = 0) -> bool:
@@ -369,45 +358,46 @@ class FEC:
         print(int(response[9]), int(response[18]))
         return True if (int(response[9]) | int(response[18])) <= 1 else False
 
-def adcd_all_writable(part:str):
-    # ACDC ALL WITH WRITING TO FILE
-    import pandas as pd
-    # wb = openpyxl.Workbook()
-    # ws = wb.active
-    # ws.title = 'fec temperatures'
+    def adcd_all_writable(part: str):
+        # ACDC ALL WITH WRITING TO FILE
+        import pandas as pd
+        # wb = openpyxl.Workbook()
+        # ws = wb.active
+        # ws.title = 'fec temperatures'
 
-    path = Path(DATA_DIR,'INP_ROC')
-    path.mkdir(parents=True, exist_ok=True)
+        path = Path(DATA_DIR, 'INP_ROC')
+        path.mkdir(parents=True, exist_ok=True)
 
-    time_now = datetime.datetime.now()
-    try:
-        data_dict = dict()
-        df = pd.DataFrame()
-        header = ['T', '1.7Vi', '1.1Vc5', '1.25Vd', 'mA2_S0', 'mA1_S0', '1.1Vr', '1.25Va', 'mA0_S0', 'Tsam',
-                  '1.25Va', 'mA3_S1', '1.1Vr', 'mA4_S1', 'mA5_S1', '1.25Va']
+        time_now = datetime.datetime.now()
+        try:
+            data_dict = dict()
+            df = pd.DataFrame()
+            header = ['T', '1.7Vi', '1.1Vc5', '1.25Vd', 'mA2_S0', 'mA1_S0', '1.1Vr', '1.25Va', 'mA0_S0', 'Tsam',
+                      '1.25Va', 'mA3_S1', '1.1Vr', 'mA4_S1', 'mA5_S1', '1.25Va']
 
-        for i in range(31):
-            print(f'Link={i}')
-            data_from_link = narrow.adcd(link=i, n=5)
-            # for adcd_line in data:
-            data_dict[f'link{i}'] = data_from_link
-            # line = [d[0] for d in data] + [d[9] for d in data]
-            # line =
-            # if i == 0:
-            #     ws.append(['fpga' for _ in range(len(data))] + ['sampa' for _ in range(len(data))])
-            # ws.append([d for d in data])
-        for link, measurements in data_dict.items():
-            adcd_df = pd.DataFrame(measurements, columns=header)  # Преобразуем np.ndarray в DataFrame
-            adcd_df['link'] = link  # Добавляем столбец с названием датчика
-            df = pd.concat([df, adcd_df], ignore_index=True)
-        df.to_excel(Path(f'{time_now.strftime("%Y-%m-%d_%H-%M-%S")}_{part}.xlsx'), index=False)
-    except Exception as e:
-        print(e)
-    finally:
-        print(f'DONE {time_now.strftime("%Y-%m-%d_%H-%M-%S")}')
-        # with open(f'{path}/{time_now}.csv', 'ax') as f:
-        # wb.save(f'{path}/{str(time_now)}_N.xlsx')
-        # wb.close()
+            for i in range(31):
+                print(f'Link={i}')
+                data_from_link = narrow.adcd(link=i, n=5)
+                # for adcd_line in data:
+                data_dict[f'link{i}'] = data_from_link
+                # line = [d[0] for d in data] + [d[9] for d in data]
+                # line =
+                # if i == 0:
+                #     ws.append(['fpga' for _ in range(len(data))] + ['sampa' for _ in range(len(data))])
+                # ws.append([d for d in data])
+            for link, measurements in data_dict.items():
+                adcd_df = pd.DataFrame(measurements, columns=header)  # Преобразуем np.ndarray в DataFrame
+                adcd_df['link'] = link  # Добавляем столбец с названием датчика
+                df = pd.concat([df, adcd_df], ignore_index=True)
+            df.to_excel(Path(f'{time_now.strftime("%Y-%m-%d_%H-%M-%S")}_{part}.xlsx'), index=False)
+        except Exception as e:
+            print(e)
+        finally:
+            print(f'DONE {time_now.strftime("%Y-%m-%d_%H-%M-%S")}')
+            # with open(f'{path}/{time_now}.csv', 'ax') as f:
+            # wb.save(f'{path}/{str(time_now)}_N.xlsx')
+            # wb.close()
+
 
 if __name__ == "__main__":
     # import openpixel
@@ -431,7 +421,7 @@ if __name__ == "__main__":
         narrow.ini(link=link)
         narrow.get_tts_tth(link=link)
         narrow.adcd(link=link, n=3)
-        a =narrow.getff(link=link)
+        a = narrow.getff(link=link)
         print(a)
         # plldict = narrow.scan_card_pll(link=link)
         # narrow.set_card_pll(link=link, sh0=10, sh1=12)
@@ -450,11 +440,9 @@ if __name__ == "__main__":
         # narrow.adcd(link=0, n=100)
         # narrow.get_tts_tth(0)
 
-
         # for i in range(31):
         #     # wide.adcd(link=i, n=1)
         #     narrow.adcd(link=i, n=1)
-
 
         # print(f'{asd=}')
 

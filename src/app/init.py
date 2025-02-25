@@ -30,17 +30,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, *args, obj=None, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
-        # host = '192.168.1.235'
-        # port = 30
-        # try:
-        #     self.fe_card = FEC(host=host, port=port)
-        #
-        #     self.gen = AFG3152C()
-        #     self.gen.rst()
-        #     time.sleep(1)
-        #     self.gen.set_initial_parameters()
-        # except Exception as e:
-        #     print(traceback.format_exc())
 
         self.fe_card: FEC | None = None
         self.gen: AFG3152C | None = None
@@ -56,41 +45,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         for button in self.buttonGroup.buttons():
             button.clicked.connect(self.on_button_clicked)
-        # print(f'{self.menuMenu.actions()=}')
-        # self.connection_widget : ConnectionForm | None = None
 
-        # self.__plot_card_number = self.plot_card_number_lineEdit.placeholderText()
         self.__plot_cdet = self.plot_cdet_comboBox.itemText(self.plot_cdet_comboBox.currentIndex())
-        # self.__plot_test_name = self.plot_test_name_comboBox.itemText(self.plot_test_name_comboBox.currentIndex())
-        # self.__plot_parity = self.plot_parity_comboBox.itemText(self.plot_parity_comboBox.currentIndex())
-        # self.__plot_run_number = self.plot_run_number_lineEdit.placeholderText()
-        # self.__plot_event_number = self.plot_event_number_lineEdit.placeholderText()
-        # self.__plot_amplitude = self.plot_amplitude_lineEdit.placeholderText()
 
         # <<<--- INT VALIDATOR --->>>
         only_int = QIntValidator()
-        # only_int.setRange(0, 4)
         self.plot_card_number_lineEdit.setValidator(only_int)
         self.plot_run_number_lineEdit.setValidator(only_int)
         self.plot_event_number_lineEdit.setValidator(only_int)
 
-        # float_only = QDoubleValidator()
-        # float_only.setRange(0.02, 2.0, 2)
-        # float_only.setNotation(QDoubleValidator.StandardNotation)
-        # self.plot_amplitude_lineEdit.setValidator(float_only)
-
         self.show_waveform_btn.clicked.connect(self.show_waveform_plot_window)
         self.show_rms_btn.clicked.connect(self.show_rms_plot_window)
         self.update_plots_btn.clicked.connect(self.update_plots_windows)
-
-        # self.plot_cdet_comboBox.activated.connect(self.plot_cdet_activate)
-        # self.plot_test_name_comboBox.activated.connect(self.plot_test_name_activate)
-        # self.plot_parity_comboBox.activated.connect(self.plot_parity_activate)
-
-        # self.plot_card_number_lineEdit.editingFinished.connect(self.plot_card_number_edit)
-        # self.plot_run_number_lineEdit.editingFinished.connect(self.plot_run_number_edit)
-        # self.plot_event_number_lineEdit.editingFinished.connect(self.plot_event_number_edit)
-        # self.plot_amplitude_lineEdit.editingFinished.connect(self.plot_amplitude_edit)
 
         # BASIC COMMANDS
         self.__link = 31
@@ -100,74 +66,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.__rid = None
         self.__mask = None
         self.__scan_pll_runs = self.scan_pll_runs_spinbox.value()
-        # self.__set_sh0_value = self.set_sh0_spinbox.value()
-        # self.__set_sh1_value = self.set_sh1_spinbox.value()
 
         self.link_spinBox.valueChanged.connect(self.link_value_changed)
         self.scan_pll_runs_spinbox.valueChanged.connect(self.scan_pll_runs_spinbox_changed)
-        # self.set_sh0_spinbox.valueChanged.connect(self.set_sh0_spinbox_changed)
-        # self.set_sh1_spinbox.valueChanged.connect(self.set_sh1_spinbox_changed)
-        #
-        # self.trstat_btn.clicked.connect(lambda: self.execute(run_func=self.trstat_fc,
-        #                                                      fecard=self.fe_card,
-        #                                                      link=self.__link))
-        # self.ini_btn.clicked.connect(lambda: self.execute(run_func=self.ini_fc,
-        #                                                   fecard=self.fe_card,
-        #                                                   link=self.__link))
-        # self.tts_tth_btn.clicked.connect(lambda: self.execute(run_func=self.tts_tth_fc,
-        #                                                       fecard=self.fe_card,
-        #                                                       link=self.__link
-        #
-        #                                                       ))
-        # self.scan_pll_btn.clicked.connect(lambda: self.execute(run_func=self.scan_pll_fc,
-        #                                                        fecard=self.fe_card,
-        #                                                        link=self.__link,
-        #                                                        runs=self.__scan_pll_runs
-        #                                                        ))
-        # self.set_pll_btn.clicked.connect(lambda: self.execute(run_func=self.set_pll_fc,
-        #                                                       fecard=self.fe_card,
-        #                                                       link=self.__link,
-        #                                                       sh0=self.set_sh0_spinbox.value(),
-        #                                                       sh1=self.set_sh1_spinbox.value()
-        #                                                       ))
-        # self.adcd_btn.clicked.connect(lambda: self.execute(run_func=self.adcd_fc,
-        #                                                    fecard=self.fe_card,
-        #                                                    link=self.__link,
-        #                                                    n=self.adcd_number_spinBox.value()
-        #                                                    ))
-        # self.ttok_btn.clicked.connect(lambda: self.execute(run_func=self.ttok_fc,
-        #                                                    fecard=self.fe_card,
-        #                                                    ))
-        #
-        # # GAIN + CROSSTALK
-        # self.gain_cross_even_btn.clicked.connect(lambda: self.execute(run_func=self.gain_cross_fc,
-        #                                                               fecard=self.fe_card,
-        #                                                               gen=self.gen,
-        #                                                               data_filter=True,
-        #                                                               link=self.__link,
-        #                                                               parity='even',
-        #                                                               ))
-        # self.gain_cross_odd_btn.clicked.connect(lambda: self.execute(run_func=self.gain_cross_fc,
-        #                                                              fecard=self.fe_card,
-        #                                                              gen=self.gen,
-        #                                                              data_filter=True,
-        #                                                              link=self.__link,
-        #                                                              parity='odd',
-        #                                                              ))
-        # # RMS_PEDESTAL
-        # self.pedestal_btn.clicked.connect(lambda: self.execute(run_func=self.rms_pedestal_fc,
-        #                                                        fecard=self.fe_card,
-        #                                                        data_filter=True,
-        #                                                        link=self.__link))
         # # RAW
         self.__raw_runs = self.raw_runs_spinBox.value()
         self.raw_runs_spinBox.valueChanged.connect(self.raw_runs_spinbox_changed)
-        # self.raw_btn.clicked.connect(lambda: self.execute(run_func=self.raw_fc,
-        #                                                   fecard=self.fe_card,
-        #                                                   runs_number=self.__raw_runs,
-        #                                                   data_filter=True,
-        #                                                   link=self.__link
-        #                                                   ))
 
         # CDET
         self.__enc_cdet = self.enc_cdet_comboBox.itemText(self.enc_cdet_comboBox.currentIndex())
@@ -341,28 +245,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.pedestal_lastrun_label.setText(f'{fullpath}')
                 self.plot_run_number_lineEdit.setText(str(file_number))
                 self.plot_test_name_comboBox.setCurrentIndex(self.plot_test_name_comboBox.findText('rms_pedestal'))
-            # case 'crosstalk_fc':
-            #     file_number = self.get_file_number(TestsName.CROSSTALK)
-            #     vatfilename = f'{file_number}-{self.__card_number}.vat'
-            #     path = self.get_path(test_name=TestsName.CROSSTALK)
-            #     vatfullpath = path + vatfilename
-            #     header = ['T', 'Vi1_7', 'Vc5_1_1', 'Vd1_25', 'mA2_S0', 'mA1_S0', 'Vr1_1_1', 'Va1_1_25', 'mA0_S0',
-            #               'Tsam', 'Va2_1_25', 'mA3_S1', 'Vr2_1_1', 'mA4_S1', 'mA5_S1', 'Va3_1_25']
-            #     np.savetxt(vatfullpath, result['adcd'], delimiter=' ', fmt='%.2f', header=f'{' '.join(header)}')
-            #     for gen_channel in range(1, 3, 1):
-            #         parity = 'even' if gen_channel == 1 else 'odd'
-            #         filename = f'{file_number}-{self.__card_number}-{parity}-2pF.txt'
-            #         fullpath = path + filename
-            #
-            #         if not os.path.exists(path):
-            #             os.makedirs(path)
-            #         with open(fullpath, 'w') as f:
-            #             for line in result['ff'][gen_channel - 1]:
-            #                 f.write((b' '.join(b'0x' + word for word in line) + b'\n').decode())
-            #
-            #         self.crosstalk_lastrun_label.setText(f'{fullpath}')
-            #         self.plot_run_number_lineEdit.setText(str(file_number))
-            #         self.plot_test_name_comboBox.setCurrentIndex(self.plot_test_name_comboBox.findText('crosstalk'))
 
             case 'gain_cross_odd_btn' | 'gain_cross_even_btn':
                 ampl_range = np.concatenate([np.linspace(0.02, 0.1, 9),
@@ -458,9 +340,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     # self.__plot_card_number = self.__card_number
                 path = self.get_path(test_name=TestsName.PLL)
                 fullname = Path(path, f'{self.__card_number}_in_memory_pll.json')
-                # if not os.path.exists(fullname):
-                #     if not os.path.exists(path):
-                #         os.makedirs(path)
                 path.mkdir(parents=True, exist_ok=True)
                 with open(fullname, 'w') as f:
                     json.dump(pll, f)
@@ -620,35 +499,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def scan_pll_runs_spinbox_changed(self):
         self.__scan_pll_runs = self.scan_pll_runs_spinbox.value()
 
-    # def set_sh0_spinbox_changed(self):
-    #     self.__set_sh0_value = self.set_sh0_spinbox.value()
-    #
-    # def set_sh1_spinbox_changed(self):
-    #     self.__set_sh1_value = self.set_sh1_spinbox.value()
-
     def link_value_changed(self):
         self.__link = self.link_spinBox.value()
-
-    # def plot_amplitude_edit(self):
-    #     self.__plot_amplitude = self.plot_amplitude_lineEdit.text()
-    #
-    # def plot_event_number_edit(self):
-    #     self.__plot_event_number = self.plot_event_number_lineEdit.text()
-    #
-    # def plot_run_number_edit(self):
-    #     self.__plot_run_number = self.plot_run_number_lineEdit.text()
-
-    # def plot_card_number_edit(self):
-    #     self.__plot_card_number = self.plot_card_number_lineEdit.text()
-
-    # def plot_parity_activate(self, idx):
-    # self.__plot_parity = self.plot_parity_comboBox.itemText(idx)
-
-    # def plot_test_name_activate(self, idx):
-    # self.__plot_test_name = self.plot_test_name_comboBox.itemText(idx)
-
-    # def plot_cdet_activate(self, idx):
-    #     self.__plot_cdet = self.plot_cdet_comboBox.itemText(idx)
 
     def enc_cdet_activate(self, idx):
         self.__enc_cdet = self.enc_cdet_comboBox.itemText(idx)
