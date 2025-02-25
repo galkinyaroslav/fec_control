@@ -14,6 +14,7 @@ import numpy as np
 
 from app.config import DATA_DIR, RUNS_DIR, TEMP_DIR
 from app.logic.data_structure.factory import NWaveForm
+from app.logic.slow_control import SlowControl
 
 
 class BankNumber(enum.Enum):
@@ -221,10 +222,15 @@ class FEC:
                 ar[13] = float(ar[13]) / 20
                 ar[14] = float(ar[14]) / 2.5
                 svn = ['%2.1f' % val for val in ar]
-                sout = '      %s    %s   %s   %s   %s    %s      %s   %s   %s     %s    %s   %s    %s   %s      %s    %s  ' % \
-                       (svn[0], svn[1], svn[2], svn[3], svn[4], svn[5], svn[6], svn[7], svn[8], svn[9],
-                        svn[10], svn[11], svn[12], svn[13], svn[14], svn[15])
-                print(sout)
+                # sout = '      %s    %s   %s   %s   %s    %s      %s   %s   %s     %s    %s   %s    %s   %s      %s    %s  ' % \
+                #        (svn[0], svn[1], svn[2], svn[3], svn[4], svn[5], svn[6], svn[7], svn[8], svn[9],
+                #         svn[10], svn[11], svn[12], svn[13], svn[14], svn[15])
+                # print(sout)
+                sc = SlowControl(svn)
+                data = sc.get_data()
+                checked = sc.validate_data(data)
+                sc.print_colored_string(checked)
+
                 for idx in range(len(svn)):
                     svnarr[j][idx] = svn[idx]
                 # np.vstack([svnarr, [float(s) for s in svn]])
