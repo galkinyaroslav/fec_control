@@ -22,6 +22,8 @@ dependencies = [
     "openpyxl<4.0.0,>=3.1.2",
     "jsonschema<5.0.0,>=4.23.0",
     "colorama>=0.4.6",
+    "zeroconf>=0.145.1",
+    "psutil>=7.0.0",
 ]
 name = "fec-control"
 version = "0.1.0"

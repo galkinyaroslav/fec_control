@@ -31,10 +31,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
 
+        self.connection_widget = None
+
         self.fe_card: FEC | None = None
         self.gen: AFG3152C | None = None
 
         self.threadpool = QThreadPool()
+        self.worker = None
 
         # PLOTTING
         self.waveform_window = WaveFormWindow()
@@ -77,6 +80,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.__enc_cdet = self.enc_cdet_comboBox.itemText(self.enc_cdet_comboBox.currentIndex())
         self.enc_cdet_comboBox.activated.connect(self.enc_cdet_activate)
 
+        self.stop_thread_btn.clicked.connect(self.break_thread)
+        self.stop_thread_flag = False
+
         self.button_functions = {
             'pedestal_btn': self.rms_pedestal_fc,
             'gain_cross_odd_btn': self.gain_cross_fc,
@@ -106,6 +112,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         }
 
         self.show()
+
+    def break_thread(self):
+        if self.worker is not None:
+            self.worker.stop()
 
     def update_args(self, button_name):
         """Update `args` before running `run_func`."""
@@ -195,8 +205,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for btn in self.buttonGroup.buttons():
             btn.setEnabled(False)
         sender.setStyleSheet("background-color: red")
+        self.stop_thread_btn.setEnabled(True)
 
         self.execute(button_name=button_name, run_func=run_func, **kwargs)
+        # self.stop_thread_btn.setEnabled(False)
+
 
     def open_connection_widget(self):
         self.connection_widget = ConnectionForm(self.fe_card, self.gen)
@@ -212,16 +225,35 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def execute(self, *args, **kwargs):
         print(kwargs['run_func'])
 
-        # self.buttonGroup.buttons()
-        worker = Worker(*args, **kwargs)
-        worker.signals.finished.connect(self.onTelnetFinished)
+        self.worker = Worker(*args, **kwargs)
+        self.worker.signals.finished.connect(self.onTelnetFinished)
+        self.worker.signals.broken.connect(self.onTelnetBroken)
+        self.worker.signals.end.connect(self.onTelnetEnd)
         # Execute
-        self.threadpool.start(worker)
+        self.threadpool.start(self.worker)
+
+    @Slot(object)
+    def onTelnetEnd(self, button_name):
+        print(f'{button_name} is broken!')
+        self.stop_thread_flag = False
+        self.stop_thread_btn.setEnabled(False)
+        for button in self.buttonGroup.buttons():
+            button.setEnabled(True)
+            # print(f'{button.objectName()=}, {button_name=}')
+            if button.objectName() == button_name:
+                button.setStyleSheet("")
+
+
+    @Slot()
+    def onTelnetBroken(self):
+        self.stop_thread_flag = True
+
 
     @Slot(object, object, object, object)
     def onTelnetFinished(self, fec_func, button_name, result, *args, **kwargs):
         print(f'{fec_func.__name__} on {button_name} is finished\n')
-        print(f'{args=}, {kwargs=}')
+        # print(f'{args=}, {kwargs=}')
+        self.stop_thread_btn.setEnabled(False)
         for button in self.buttonGroup.buttons():
             button.setEnabled(True)
             if button.objectName() == button_name:
@@ -367,27 +399,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def rms_pedestal_fc(self, fecard, link: int = 31, data_filter: bool = True):
         runs_number: int = 100
-        adcd = fecard.adcd(n=3, link=link)
-        ff = []
-        nrun = 1
-        while runs_number:
-            received_data = fecard.getff(link=link)
-            print(f'Run #{nrun}, TTH>>{received_data[-3].decode()}\n')
-            data = received_data[1:FW_DATA_LENGTH[f'{self.__cid}'] + 1]
-            wform = NWaveForm(data=data, firmware=f'{get_card_fw(link=link)}')
-            if not wform.is_valid() and data_filter:
-                runs_number += 1
-            else:
-                ff.append(data)
-            runs_number -= 1
-            nrun += 1
-        return {'adcd': adcd, 'ff': ff}
+        self.raw_fc(fecard=fecard, runs_number=runs_number,link=link, data_filter=data_filter)
 
     def raw_fc(self, fecard, runs_number: int = 10, link: int = 31, data_filter: bool = True):
         adcd = fecard.adcd(n=3, link=link)
         ff = []
         nrun = 1
-        while runs_number:
+        while runs_number and not self.stop_thread_flag:
             received_data = fecard.getff(link=link)
             print(f'Run #{nrun}, TTH>>{received_data[-3].decode()}\n')
             data = received_data[1:FW_DATA_LENGTH[f'{self.__cid}'] + 1]
@@ -417,7 +435,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             time.sleep(1)
             nrun = 1
             ff.append([])
-            while runs_number:
+            while runs_number and not self.stop_thread_flag:
                 received_data = fecard.getff(link=link)
                 print(f'Run #{nrun}, TTH>>{received_data[-3].decode()}\n')
                 data = received_data[1:FW_DATA_LENGTH[f'{self.__cid}'] + 1]
@@ -452,7 +470,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             time.sleep(1)
             ff.append([])
             nrun = 1
-            while runs_number:
+            while runs_number and not self.stop_thread_flag:
                 received_data = fecard.getff(link=link)
                 print(f'Run #{nrun}, TTH>>{received_data[-3].decode()}\n')
                 data = received_data[1: FW_DATA_LENGTH[f'{self.__cid}'] + 1]

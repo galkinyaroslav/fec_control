@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'MainWindow_UI.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.8.1
+## Created by: Qt User Interface Compiler version 6.8.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -28,7 +28,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(830, 630)
+        MainWindow.resize(830, 770)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -215,8 +215,8 @@ class Ui_MainWindow(object):
 
         self.line_9 = QFrame(self.frame_7)
         self.line_9.setObjectName(u"line_9")
-        sizePolicy2.setHeightForWidth(self.line_9.sizePolicy().hasHeightForWidth())
-        self.line_9.setSizePolicy(sizePolicy2)
+        sizePolicy.setHeightForWidth(self.line_9.sizePolicy().hasHeightForWidth())
+        self.line_9.setSizePolicy(sizePolicy)
         self.line_9.setMinimumSize(QSize(60, 20))
         self.line_9.setFrameShape(QFrame.Shape.HLine)
         self.line_9.setFrameShadow(QFrame.Shadow.Sunken)
@@ -850,10 +850,29 @@ class Ui_MainWindow(object):
 
         self.gridLayout_3.addWidget(self.frame, 0, 3, 5, 1)
 
+        self.frame_2 = QFrame(self.centralwidget)
+        self.frame_2.setObjectName(u"frame_2")
+        self.frame_2.setFrameShape(QFrame.Shape.StyledPanel)
+        self.frame_2.setFrameShadow(QFrame.Shadow.Raised)
+        self.verticalLayout_4 = QVBoxLayout(self.frame_2)
+        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
+        self.stop_thread_btn = QPushButton(self.frame_2)
+        self.stop_thread_btn.setObjectName(u"stop_thread_btn")
+        self.stop_thread_btn.setEnabled(False)
+        sizePolicy2.setHeightForWidth(self.stop_thread_btn.sizePolicy().hasHeightForWidth())
+        self.stop_thread_btn.setSizePolicy(sizePolicy2)
+        self.stop_thread_btn.setMinimumSize(QSize(160, 20))
+        self.stop_thread_btn.setStyleSheet(u"background-color: red")
+
+        self.verticalLayout_4.addWidget(self.stop_thread_btn)
+
+
+        self.gridLayout_3.addWidget(self.frame_2, 5, 3, 1, 1)
+
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 830, 22))
+        self.menubar.setGeometry(QRect(0, 0, 830, 23))
         self.menuMenu = QMenu(self.menubar)
         self.menuMenu.setObjectName(u"menuMenu")
         MainWindow.setMenuBar(self.menubar)
@@ -987,6 +1006,7 @@ class Ui_MainWindow(object):
         self.show_waveform_btn.setText(QCoreApplication.translate("MainWindow", u"Show WaveForm", None))
         self.show_rms_btn.setText(QCoreApplication.translate("MainWindow", u"Show RMS", None))
         self.update_plots_btn.setText(QCoreApplication.translate("MainWindow", u"Update Plots", None))
+        self.stop_thread_btn.setText(QCoreApplication.translate("MainWindow", u"STOP", None))
         self.menuMenu.setTitle(QCoreApplication.translate("MainWindow", u"Menu", None))
     # retranslateUi
 
