@@ -428,11 +428,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         for gen_channel in range(1, 3, 1):
             runs_number = 10
-
+            if self.stop_thread_flag:
+                return {'adcd': adcd, 'ff': ff}
             gen.set_volt_low(low=0, channel=gen_channel)
             gen.set_volt_high(high=0.5, channel=gen_channel)
             gen.set_output_state('ON', channel=gen_channel)
-            time.sleep(1)
+            time.sleep(0.1)
             nrun = 1
             ff.append([])
             while runs_number and not self.stop_thread_flag:
@@ -459,6 +460,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                                      [2, ]])
         gen_channel = 1 if parity == 'even' else 2
         for ampl in range(len(ampl_range)):
+            if self.stop_thread_flag:
+                return {'adcd': adcd, 'ff': ff}
             runs_number = 10
             print(f'{ampl=}')
             gen.set_volt_low(low=0, channel=gen_channel)
@@ -467,7 +470,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # gen.set_volt_high(high=round(ampl_range[ampl], 2), channel=2)
             gen.set_output_state('ON', channel=gen_channel)
             gen.set_output_state('OFF', channel=2 if parity == 'even' else 1)
-            time.sleep(1)
+            time.sleep(0.1)
             ff.append([])
             nrun = 1
             while runs_number and not self.stop_thread_flag:
