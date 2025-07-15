@@ -4,7 +4,7 @@ import logging
 from PySide6.QtWidgets import QApplication
 from app.init import MainWindow
 import json
-from app.config import LOGS_DIR
+from app.config import LOGS_DIR, RUNS_DIR, DATA_DIR, TEMP_DIR
 from pathlib import Path
 
 
@@ -21,6 +21,21 @@ def setup_logging():
             logging.StreamHandler(sys.stdout),
         ]
     )
+def setup_data():
+    """Настройка данных."""
+    if  not DATA_DIR.exists():
+        Path.mkdir(DATA_DIR)
+
+def setup_runs():
+    """Настройка ранов."""
+    if  not RUNS_DIR.exists():
+        Path.mkdir(RUNS_DIR)
+
+def setup_temp():
+    """Настройка временных файлов."""
+    if  not TEMP_DIR.exists():
+        Path.mkdir(TEMP_DIR)
+
 
 def load_config():
     """Загрузка конфигурации из файла."""
@@ -36,7 +51,10 @@ def load_config():
 
 def main():
     setup_logging()
-
+    setup_data()
+    setup_runs()
+    setup_temp()
+    # load_config()
     # config = load_config()
     # logging.info("Configuration loaded: %s", config)
 

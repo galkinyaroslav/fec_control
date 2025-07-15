@@ -29,7 +29,6 @@ class TestsName(enum.Enum):
     PLL: str = 'pll'
     RAW: str = 'raw'
     RMS_PEDESTAL: str = 'rms_pedestal'
-    # WORKED_CHANNEL: str = 'worked_channel'
 
 
 def color_print(message: str, font: str = 'w', background: str = 'd'):
@@ -87,11 +86,24 @@ def get_card_number(link: int = 0, single: bool = True) -> int:
             data = json.load(f)
             return data[link]['card']
 
+def get_path(card_number, enc_cdet = '0pF',test_name: TestsName = TestsName.RAW) -> Path:
+    return Path(RUNS_DIR, f'{card_number}', f'{enc_cdet}', f'{test_name.value}')
 
-def get_file_number(card_number: int, test_name: TestsName = TestsName.RAW) -> int:
-    path = Path(RUNS_DIR, f'{card_number}', test_name.value)
-    Path(path).mkdir(parents=True, exist_ok=True)
-    return len(list(path.iterdir())) + 1
+def get_file_number(card_number: int, enc_cdet= '0pF', test_name: TestsName = TestsName.RAW) -> int:
+    path = get_path(card_number,enc_cdet, test_name)
+    path.mkdir(parents=True, exist_ok=True)
+    numfile = len(list(path.glob('*.txt')))
+    match test_name.value:
+        case TestsName.PLL.value:
+            return numfile + 1
+        case TestsName.RAW.value | TestsName.RMS_PEDESTAL.value:
+            return numfile + 1
+        case TestsName.GAIN.value:
+            return int(-(numfile // -32)) + 1 if numfile else 1  # 25 - len(input amplitudes)
+        # case TestsName.CROSSTALK.value:
+        #     return int(-(numfile // -2)) + 1 if numfile else 1  # 2 for odd and even
+        case _:
+            raise ValueError(f'{test_name.value} is not in TestsName')
 
 
 class FEC:
@@ -156,27 +168,34 @@ class FEC:
 
     def ini(self, link=1, fini=''):
         self.ttok(f'wmsk 0xffffffff;car {link}')
-        self.power_on(link=link)
         if fini == '':
-            self.ttok(f'wsa 13 30 {link};')
-            self.ttok(f'wsa 77 30 {link};')  # VACFG
-            self.ttok(f'wsa 7 30 {link};')
-            self.ttok(f'wsa 8 0 {link};')  # TWLen.0
-            self.ttok(f'wsa 71 30 {link};')
-            self.ttok(f'wsa 72 0 {link};')  # TWLen.1
-            self.ttok(f'wsa 9 0 {link};')
-            self.ttok(f'wsa 10 0 {link};')
-            self.ttok(f'wsa 73 0 {link};')
-            self.ttok(f'wsa 74 0 {link};')  # AQStart
-            self.ttok(f'wsa 11 30 {link};')
-            self.ttok(f'wsa 12 0 {link};')
-            self.ttok(f'wsa 75 30 {link};')
-            self.ttok(f'wsa 76 0 {link};')  # AQStop
-            self.ttok(f'wxv 0x944 0x6600 {link};')  # #  wxv   0x944 0x6600 0;
-            self.ttok(f'kmsffw 0x0 {link};')
-            self.ttok(f'kmslkw 0xff {link};')  # set k 0;kmsffw 0x0 $k; kmslkw 0x0 $k;
-            self.ttok(f'getsetpll {link};')
-            self.ttok(f'cff;')
+            flag = True
+            while flag:
+                self.power_on(link=link)
+
+                self.ttok(f'wsa 13 30 {link};'
+                          f'wsa 77 30 {link};'  # VACFG
+                          f'wsa 7 30 {link};'
+                          f'wsa 8 0 {link};'  # TWLen.0
+                          f'wsa 71 30 {link};'
+                          f'wsa 72 0 {link};'  # TWLen.1
+                          f'wsa 9 0 {link};'
+                          f'wsa 10 0 {link};'
+                          f'wsa 73 0 {link};'
+                          f'wsa 74 0 {link};'  # AQStart
+                          f'wsa 11 30 {link};'
+                          f'wsa 12 0 {link};'
+                          f'wsa 75 30 {link};'
+                          f'wsa 76 0 {link};'  # AQStop
+                          f'wxv 0x944 0x6600 {link};'  # #  wxv   0x944 0x6600 0;
+                          f'kmsffw 0x0 {link};'
+                          f'kmslkw 0xff {link};'  # set k 0;kmsffw 0x0 $k; kmslkw 0x0 $k;
+                          f'getsetpll {link};'
+                          f'cff;')
+                if 0.0 in self.adcd(link=link, n=1):
+                    flag = True
+                else:
+                    flag = False
 
         if fini == 'ini.txt':
             print(" Load from file ...")
@@ -237,10 +256,15 @@ class FEC:
 
         return svnarr
 
-    def getff(self, link: int) -> list[bytes]:
+    def getff(self, link: int, tth: bool = True) -> list[bytes]:
+        if tth:
+            _tth = 'tth 1;'
+        else:
+            _tth = ''
+
         return self.ttok(f'wmsk 0xffffffff;'
                          f'car {link};'
-                         f'tth 1;'
+                         f'{_tth}'
                          f'getdd {BankNumber.ZERO.value};'
                          f'getdd {BankNumber.FIRST.value}', False).split(b',')
 
@@ -248,30 +272,54 @@ class FEC:
                runs_number: int = 1,
                single: bool = False,
                data_filter: bool = True,
-               test_name: TestsName = TestsName.RAW) -> None:
+               test_name: TestsName = TestsName.RAW,
+               tth: bool = True) -> None:
         # ttok(f'car {link}')
         card_number = get_card_number(link=link, single=single)
+
+        path = Path(RUNS_DIR, f'{card_number}', f'0pF', f'{test_name.value}')
+        path.mkdir(parents=True, exist_ok=True)
+
+        header = ['T', 'Vi1_7', 'Vc5_1_1', 'Vd1_25', 'mA2_S0', 'mA1_S0', 'Vr1_1_1', 'Va1_1_25', 'mA0_S0',
+                  'Tsam', 'Va2_1_25', 'mA3_S1', 'Vr2_1_1', 'mA4_S1', 'mA5_S1', 'Va3_1_25']
+
+
         file_number = int(
             get_file_number(card_number, test_name=test_name))  # TODO придумать как передавать имя теста 1
         file_name = f'{file_number}-{card_number}.txt'
-        print(f'Initiated run')
+        vatfilename = f'{file_number}-{card_number}.vat'
+        vatfullpath = Path(path, vatfilename)
+
+
+        adcd = self.adcd(n=3, link=link)
+        np.savetxt(vatfullpath, adcd, delimiter=' ', fmt='%.2f', header=f'{' '.join(header)}')
+
+        # print(f'Initiated run')
         print(f'Card number: {card_number}, file name: {file_name}, run: {file_number}')
         with open(Path(TEMP_DIR, 'events.lst'), 'w') as events_file:
+
             nrun = 1
+            ff = []
             while runs_number:
-                received_data = self.getff(link=link)
+                received_data = self.getff(link=link, tth=tth)
                 # print(f'{received_data=}')
+                # print(f'{len(received_data)=}')
                 print(f'Run #{nrun}, TTH>>{received_data[-3].decode()}\n')
-                wform = NWaveForm(data=received_data[1:-34], firmware=get_card_fw(link=link))
+                data = received_data[1:779]
+
+                wform = NWaveForm(data=data, firmware=get_card_fw(link=link))
                 if not wform.is_valid() and data_filter:
                     runs_number += 1
                 else:
-                    events_file.write((b' '.join(b'0x' + word for word in received_data[1:-34]) + b'\n').decode())
+                    ff.append(data)
                 runs_number -= 1
                 nrun += 1
-        path = Path(RUNS_DIR, f'{card_number}', f'{test_name.value}')
-        oscmd(
-            f'mkdir -p {path} && cp events.lst {path}/{file_name}')
+
+        with open(Path(path, file_name), 'w') as f:
+            for line in ff:
+                f.write((b' '.join(b'0x' + word for word in line) + b'\n').decode())
+
+
         return
 
     def get_trstat(self, link: int) -> dict:
@@ -333,9 +381,15 @@ class FEC:
         for link in range(31):
             self.ini(link)
 
-    def getffw_all(self, runs_number: int = 1, data_filter: bool = True) -> None:
+    def tth(self, n: int = 1):
+        self.ttok(f'tth {n}')
+
+    def getffw_all(self, runs_number: int = 1) -> None:
+        # self.ttok(f'tth 1')
+        # for i in range(runs_number):
+            # self.tth(1)
         for link in range(31):
-            self.getffw(link=link, runs_number=runs_number, single=False, data_filter=data_filter)
+            self.getffw(link=link, runs_number=100, single=False, data_filter=False, tth=True)
 
     def power_off_all(self) -> None:
         for link in range(31):
@@ -364,7 +418,7 @@ class FEC:
         print(int(response[9]), int(response[18]))
         return True if (int(response[9]) | int(response[18])) <= 1 else False
 
-    def adcd_all_writable(part: str):
+    def adcd_all_writable(self, part: str, n: int = 1):
         # ACDC ALL WITH WRITING TO FILE
         import pandas as pd
         # wb = openpyxl.Workbook()
@@ -383,7 +437,7 @@ class FEC:
 
             for i in range(31):
                 print(f'Link={i}')
-                data_from_link = narrow.adcd(link=i, n=5)
+                data_from_link = self.adcd(link=i, n=n)
                 # for adcd_line in data:
                 data_dict[f'link{i}'] = data_from_link
                 # line = [d[0] for d in data] + [d[9] for d in data]
@@ -395,7 +449,7 @@ class FEC:
                 adcd_df = pd.DataFrame(measurements, columns=header)  # Преобразуем np.ndarray в DataFrame
                 adcd_df['link'] = link  # Добавляем столбец с названием датчика
                 df = pd.concat([df, adcd_df], ignore_index=True)
-            df.to_excel(Path(f'{time_now.strftime("%Y-%m-%d_%H-%M-%S")}_{part}.xlsx'), index=False)
+            df.to_excel(Path(path,f'{time_now.strftime("%Y-%m-%d_%H-%M-%S")}_{part}.xlsx'), index=False)
         except Exception as e:
             print(e)
         finally:
@@ -408,27 +462,26 @@ class FEC:
 if __name__ == "__main__":
     # import openpixel
     main_start = perf_counter()
-    # host_wide = '192.168.1.191'
-    host_narrow = '192.168.1.235'
+    host = '192.168.1.235'
 
     port = 30
     # tln = telnetlib.Telnet(timeout=10)
     # tln.open(host=host, port=port)
     # out = tln.read_until('return:\n\r'.encode('utf-8'), timeout=10)
     # print(out.decode('utf-8'))
-    # wide = FEC(host=host_wide, port=port)
-    narrow = FEC(host=host_narrow, port=port)
+    wide = FEC(host=host, port=port)
+    # narrow = FEC(host=host, port=port)
 
     try:
         np.set_printoptions(linewidth=1000, threshold=np.inf)
-        link = 7
+        link = 16
         # f.ttok(f'wmsk 0xffffffff')
-        narrow.get_trstat(link=link)
-        narrow.ini(link=link)
-        narrow.get_tts_tth(link=link)
-        narrow.adcd(link=link, n=3)
-        a = narrow.getff(link=link)
-        print(a)
+        # narrow.get_trstat(link=link)
+        # narrow.ini(link=link)
+        # narrow.get_tts_tth(link=link)
+        # narrow.adcd(link=link, n=3)
+        # a = narrow.getff(link=link)
+        # print(a)
         # plldict = narrow.scan_card_pll(link=link)
         # narrow.set_card_pll(link=link, sh0=10, sh1=12)
         # narrow.get_tts_tth(link=link)
@@ -436,13 +489,30 @@ if __name__ == "__main__":
         # acdc_all_writable()
 
         # wide.get_trstat_all()
-        # wide.ini_all()
+        # wide.ini_all() # TODO need integrator of 3
         # wide.get_tts_tth_all()
+        wide.ini(link=link)
+        wide.getffw(link=link,runs_number=100)
+        # wide.adcd_all_writable(part='W')
+        # wide.getffw_all(runs_number=100)
+        # wide.ini(link=0)
+        # wide.ttok('cff')
+        # wide.adcd(link=link,n=3)
+
         # narrow.get_trstat_all()
         # narrow.ini_all()
         # narrow.get_tts_tth_all()
-        #
-        # adcd_all_writable(part='W')
+        # narrow.adcd_all_writable(part='N')
+        # narrow.getffw_all(runs_number=100)
+        # narrow.ttok(f'wmsk 0x00000000')
+        # narrow.ttok(f'hard')
+        # narrow.tth(1)
+        # print(narrow.ttok(f'rff '))
+        # narrow.ttok(f'car?')
+
+        # narrow.getffw(link=link, runs_number=1, single=False, data_filter=False, tth=False)
+        # narrow.getffw(link=link+1, runs_number=1, single=False, data_filter=False, tth=False)
+
         # narrow.adcd(link=0, n=100)
         # narrow.get_tts_tth(0)
 
@@ -457,15 +527,19 @@ if __name__ == "__main__":
         # for i in range(31):
         #     narrow.get_trstat(link=i)
         # narrow.getffw(link=10, runs_number=100)
-        # narrow.getffw_all(runs_number=100)
+    except KeyboardInterrupt:
+        wide.tln.write('!\r\n'.encode('utf-8'))
+        wide.tln.close()
+        # narrow.tln.write('!\r\n'.encode('utf-8'))
+        # narrow.tln.close()
     except Exception as e:
         print(e)
         print(traceback.format_exc())
 
     finally:
-        # wide.tln.write('!\r\n'.encode('utf-8'))
-        # wide.tln.close()
-        narrow.tln.write('!\r\n'.encode('utf-8'))
-        narrow.tln.close()
+        wide.tln.write('!\r\n'.encode('utf-8'))
+        wide.tln.close()
+        # narrow.tln.write('!\r\n'.encode('utf-8'))
+        # narrow.tln.close()
         main_stop = perf_counter()
         print(f'main_time={main_stop - main_start}')

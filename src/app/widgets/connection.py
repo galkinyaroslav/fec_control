@@ -33,7 +33,7 @@ SCHEMA = {
 }
 
 DEFAULT_IP = '192.168.1.235'
-DEFAULT_PORT = 30
+DEFAULT_PORT = '30'
 RCU_IP_FILE = 'rcu_ip.json'
 class ConnectionForm(QDialog, Ui_Dialog):
     connections_ready = Signal(object, object)

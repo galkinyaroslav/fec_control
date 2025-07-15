@@ -138,8 +138,8 @@ class FirmwareProcessor0x24040800(BaseDataProcessor):
                 # print(link_data_dict)
                 data_list.append(list(chain.from_iterable(link_data_dict.values())))
                 # np_data = np.array([[link_data_dict[f'{lk}'][:, :, 5:]] for lk in range(len(link_data_dict))], dtype=np.uint16)
-        except IndexError:
-            print(f'Data from queue is corrupted')
+        except IndexError as e:
+            print(f'[{e}] Data from queue is corrupted')
             self._valid_data_structure = False
             # print(f'{len(np_data)=},{np_data=}')
         # for i in data_list:
