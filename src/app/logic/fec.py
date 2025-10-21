@@ -86,11 +86,13 @@ def get_card_number(link: int = 0, single: bool = True) -> int:
             data = json.load(f)
             return data[link]['card']
 
-def get_path(card_number, enc_cdet = '0pF',test_name: TestsName = TestsName.RAW) -> Path:
+
+def get_path(card_number, enc_cdet='0pF', test_name: TestsName = TestsName.RAW) -> Path:
     return Path(RUNS_DIR, f'{card_number}', f'{enc_cdet}', f'{test_name.value}')
 
-def get_file_number(card_number: int, enc_cdet= '0pF', test_name: TestsName = TestsName.RAW) -> int:
-    path = get_path(card_number,enc_cdet, test_name)
+
+def get_file_number(card_number: int, enc_cdet='0pF', test_name: TestsName = TestsName.RAW) -> int:
+    path = get_path(card_number, enc_cdet, test_name)
     path.mkdir(parents=True, exist_ok=True)
     numfile = len(list(path.glob('*.txt')))
     match test_name.value:
@@ -166,32 +168,45 @@ class FEC:
             color_print(f'===> SOME ERROR {powst_full.decode()}', background='r')
             print('')
 
+    def check_reg_13_77(self, link: int):
+        flag = True
+        while flag:
+            response = self.ttok(f'wsa 13 30 {link};'
+                                 f'wsa 77 30 {link};'
+                                 f'rsa 13 {link};'
+                                 f'rsa 77 {link}')
+            data = response.replace(b' ,', b'').split(b' ') # data=[b'0x4000001e', b'0x4000001e']
+            if int(data[0], 16) & 0xff == 30 and int(data[1], 16) & 0xff == 30:
+                flag = False
+        return True
+
     def ini(self, link=1, fini=''):
         self.ttok(f'wmsk 0xffffffff;car {link}')
         if fini == '':
             flag = True
             while flag:
                 self.power_on(link=link)
-
-                self.ttok(f'wsa 13 30 {link};'
-                          f'wsa 77 30 {link};'  # VACFG
-                          f'wsa 7 30 {link};'
-                          f'wsa 8 0 {link};'  # TWLen.0
-                          f'wsa 71 30 {link};'
-                          f'wsa 72 0 {link};'  # TWLen.1
-                          f'wsa 9 0 {link};'
-                          f'wsa 10 0 {link};'
-                          f'wsa 73 0 {link};'
-                          f'wsa 74 0 {link};'  # AQStart
-                          f'wsa 11 30 {link};'
-                          f'wsa 12 0 {link};'
-                          f'wsa 75 30 {link};'
-                          f'wsa 76 0 {link};'  # AQStop
-                          f'wxv 0x944 0x6600 {link};'  # #  wxv   0x944 0x6600 0;
-                          f'kmsffw 0x0 {link};'
-                          f'kmslkw 0xff {link};'  # set k 0;kmsffw 0x0 $k; kmslkw 0x0 $k;
-                          f'getsetpll {link};'
-                          f'cff;')
+                self.check_reg_13_77(link=link)
+                self.ttok(
+                    # f'wsa 13 30 {link};'
+                    # f'wsa 77 30 {link};'  # VACFG
+                    f'wsa 7 30 {link};'
+                    f'wsa 8 0 {link};'  # TWLen.0
+                    f'wsa 71 30 {link};'
+                    f'wsa 72 0 {link};'  # TWLen.1
+                    f'wsa 9 0 {link};'
+                    f'wsa 10 0 {link};'
+                    f'wsa 73 0 {link};'
+                    f'wsa 74 0 {link};'  # AQStart
+                    f'wsa 11 30 {link};'
+                    f'wsa 12 0 {link};'
+                    f'wsa 75 30 {link};'
+                    f'wsa 76 0 {link};'  # AQStop
+                    f'wxv 0x944 0x6600 {link};'  # #  wxv   0x944 0x6600 0;
+                    f'kmsffw 0x0 {link};'
+                    f'kmslkw 0xff {link};'  # set k 0;kmsffw 0x0 $k; kmslkw 0x0 $k;
+                    f'getsetpll {link};'
+                    f'cff;')
                 if 0.0 in self.adcd(link=link, n=1):
                     flag = True
                 else:
@@ -283,13 +298,11 @@ class FEC:
         header = ['T', 'Vi1_7', 'Vc5_1_1', 'Vd1_25', 'mA2_S0', 'mA1_S0', 'Vr1_1_1', 'Va1_1_25', 'mA0_S0',
                   'Tsam', 'Va2_1_25', 'mA3_S1', 'Vr2_1_1', 'mA4_S1', 'mA5_S1', 'Va3_1_25']
 
-
         file_number = int(
             get_file_number(card_number, test_name=test_name))  # TODO придумать как передавать имя теста 1
         file_name = f'{file_number}-{card_number}.txt'
         vatfilename = f'{file_number}-{card_number}.vat'
         vatfullpath = Path(path, vatfilename)
-
 
         adcd = self.adcd(n=3, link=link)
         np.savetxt(vatfullpath, adcd, delimiter=' ', fmt='%.2f', header=f'{' '.join(header)}')
@@ -318,7 +331,6 @@ class FEC:
         with open(Path(path, file_name), 'w') as f:
             for line in ff:
                 f.write((b' '.join(b'0x' + word for word in line) + b'\n').decode())
-
 
         return
 
@@ -387,7 +399,7 @@ class FEC:
     def getffw_all(self, runs_number: int = 1) -> None:
         # self.ttok(f'tth 1')
         # for i in range(runs_number):
-            # self.tth(1)
+        # self.tth(1)
         for link in range(31):
             self.getffw(link=link, runs_number=100, single=False, data_filter=False, tth=True)
 
@@ -449,7 +461,7 @@ class FEC:
                 adcd_df = pd.DataFrame(measurements, columns=header)  # Преобразуем np.ndarray в DataFrame
                 adcd_df['link'] = link  # Добавляем столбец с названием датчика
                 df = pd.concat([df, adcd_df], ignore_index=True)
-            df.to_excel(Path(path,f'{time_now.strftime("%Y-%m-%d_%H-%M-%S")}_{part}.xlsx'), index=False)
+            df.to_excel(Path(path, f'{time_now.strftime("%Y-%m-%d_%H-%M-%S")}_{part}.xlsx'), index=False)
         except Exception as e:
             print(e)
         finally:
@@ -469,15 +481,19 @@ if __name__ == "__main__":
     # tln.open(host=host, port=port)
     # out = tln.read_until('return:\n\r'.encode('utf-8'), timeout=10)
     # print(out.decode('utf-8'))
-    wide = FEC(host=host, port=port)
-    # narrow = FEC(host=host, port=port)
+    # wide = FEC(host=host, port=port)
+    narrow = FEC(host=host, port=port)
 
     try:
         np.set_printoptions(linewidth=1000, threshold=np.inf)
-        link = 16
+        link = 4
+
         # f.ttok(f'wmsk 0xffffffff')
-        # narrow.get_trstat(link=link)
-        # narrow.ini(link=link)
+        narrow.get_trstat(link=link)
+        # narrow.power_on(link)
+
+        narrow.ini(link=link)
+        narrow.adcd(link=link,n=10)
         # narrow.get_tts_tth(link=link)
         # narrow.adcd(link=link, n=3)
         # a = narrow.getff(link=link)
@@ -491,8 +507,10 @@ if __name__ == "__main__":
         # wide.get_trstat_all()
         # wide.ini_all() # TODO need integrator of 3
         # wide.get_tts_tth_all()
-        wide.ini(link=link)
-        wide.getffw(link=link,runs_number=100)
+        # for link in range(23,37,1):
+        # wide.get_trstat(link)
+        # wide.ini(link=link)
+        # wide.getffw(link=link,runs_number=100)
         # wide.adcd_all_writable(part='W')
         # wide.getffw_all(runs_number=100)
         # wide.ini(link=0)
@@ -502,6 +520,10 @@ if __name__ == "__main__":
         # narrow.get_trstat_all()
         # narrow.ini_all()
         # narrow.get_tts_tth_all()
+        # for link in range(23,24,1):
+        #     narrow.get_trstat(link=link)
+        #     narrow.ini(link=link)
+        # narrow.tth(link=link)
         # narrow.adcd_all_writable(part='N')
         # narrow.getffw_all(runs_number=100)
         # narrow.ttok(f'wmsk 0x00000000')
@@ -513,7 +535,7 @@ if __name__ == "__main__":
         # narrow.getffw(link=link, runs_number=1, single=False, data_filter=False, tth=False)
         # narrow.getffw(link=link+1, runs_number=1, single=False, data_filter=False, tth=False)
 
-        # narrow.adcd(link=0, n=100)
+        # narrow.adcd(link=16, n=100)
         # narrow.get_tts_tth(0)
 
         # for i in range(31):
@@ -528,18 +550,18 @@ if __name__ == "__main__":
         #     narrow.get_trstat(link=i)
         # narrow.getffw(link=10, runs_number=100)
     except KeyboardInterrupt:
-        wide.tln.write('!\r\n'.encode('utf-8'))
-        wide.tln.close()
-        # narrow.tln.write('!\r\n'.encode('utf-8'))
-        # narrow.tln.close()
+        # wide.tln.write('!\r\n'.encode('utf-8'))
+        # wide.tln.close()
+        narrow.tln.write('!\r\n'.encode('utf-8'))
+        narrow.tln.close()
     except Exception as e:
         print(e)
         print(traceback.format_exc())
 
     finally:
-        wide.tln.write('!\r\n'.encode('utf-8'))
-        wide.tln.close()
-        # narrow.tln.write('!\r\n'.encode('utf-8'))
-        # narrow.tln.close()
+        # wide.tln.write('!\r\n'.encode('utf-8'))
+        # wide.tln.close()
+        narrow.tln.write('!\r\n'.encode('utf-8'))
+        narrow.tln.close()
         main_stop = perf_counter()
         print(f'main_time={main_stop - main_start}')
