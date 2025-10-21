@@ -175,7 +175,7 @@ class FEC:
                                  f'wsa 77 30 {link};'
                                  f'rsa 13 {link};'
                                  f'rsa 77 {link}')
-            data = response.replace(b' ,', b'').split(b' ') # data=[b'0x4000001e', b'0x4000001e']
+            data = response.replace(b' ,', b'').split(b' ')  # data=[b'0x4000001e', b'0x4000001e']
             if int(data[0], 16) & 0xff == 30 and int(data[1], 16) & 0xff == 30:
                 flag = False
         return True
@@ -366,17 +366,21 @@ class FEC:
             json.dump(fec_trstats, f)
         return fec_trstats
 
-    def get_trstat_all(self) -> dict:
+    def get_trstat_all(self, links: list[int] = None) -> dict:
         roc_link_map = {}
-        for link in range(31):
+        if links is None:
+            links = 31
+        for link in links:
             roc_link_map.update({link: self.get_trstat(link)})
         with open(Path(DATA_DIR, 'roc_link_map.json'), 'w') as f:
             json.dump(roc_link_map, f)
         return roc_link_map
 
-    def get_tth_all(self) -> None:
-        for i in range(31):
-            self.ttok(f'wmsk 0xffffffff;car {i};ttok ;tth 2')
+    def get_tth_all(self, links: list[int] = None) -> None:
+        if links is None:
+            links = 31
+        for link in links:
+            self.ttok(f'wmsk 0xffffffff;car {link};ttok ;tth 2')
 
     def get_tts_tth(self, link) -> bool:
         tth_tts = self.ttok(f'wmsk 0xffffffff;car {link};tts 2;tth 2')
@@ -385,38 +389,44 @@ class FEC:
         c = [int(''.join(re.findall(r'\d', i))) for i in b]
         return True if 0 <= (c[0] | c[1]) <= 1 else False
 
-    def get_tts_tth_all(self) -> None:
-        for i in range(31):
-            self.ttok(f'wmsk 0xffffffff;car {i};tts 2;tth 2')
+    def get_tts_tth_all(self, links: list[int] = None) -> None:
+        if links is None:
+            links = 31
+        for link in links:
+            self.ttok(f'wmsk 0xffffffff;car {link};tts 2;tth 2')
 
-    def ini_all(self) -> None:
-        for link in range(31):
+    def ini_all(self, links: list[int] = None) -> None:
+        if links is None:
+            links = 31
+        for link in links:
             self.ini(link)
 
     def tth(self, n: int = 1):
         self.ttok(f'tth {n}')
 
-    def getffw_all(self, runs_number: int = 1) -> None:
-        # self.ttok(f'tth 1')
-        # for i in range(runs_number):
-        # self.tth(1)
-        for link in range(31):
-            self.getffw(link=link, runs_number=100, single=False, data_filter=False, tth=True)
+    def getffw_all(self, runs_number: int = 100, links: list[int] = None) -> None:
+        if links is None:
+            links = 31
+        for link in links:
+            self.getffw(link=link, runs_number=runs_number, single=False, data_filter=False, tth=True)
 
-    def power_off_all(self) -> None:
-        for link in range(31):
+    def power_off_all(self, links: list[int] = None) -> None:
+        if links is None:
+            links = 31
+        for link in links:
             self.power_off(link)
 
     def power_off(self, link: int) -> None:
         self.ttok(f'wmsk 0xffffffff;car {link};wxv 0x904 0x0 {link}')
 
-    def power_on_all(self) -> None:
-        for link in range(31):
+    def power_on_all(self, links: list[int] = None) -> None:
+        if links is None:
+            links = 31
+        for link in links:
             self.ttok(f'wmsk 0xffffffff;car {link}')
             self.power_on(link=link)
 
     def scan_card_pll(self, link: int = 0) -> dict:
-
         self.ttok(f'car {link}')
         pll = self.ttok('scpll0; scpll1').replace(b',', b'').split(b' ')
         pll_dict = dict()
@@ -430,45 +440,36 @@ class FEC:
         print(int(response[9]), int(response[18]))
         return True if (int(response[9]) | int(response[18])) <= 1 else False
 
-    def adcd_all_writable(self, part: str, n: int = 1):
+    def adcd_all(self, part: str, links: list[int] = None, n: int = 1, write: bool = False) -> bool:
         # ACDC ALL WITH WRITING TO FILE
         import pandas as pd
-        # wb = openpyxl.Workbook()
-        # ws = wb.active
-        # ws.title = 'fec temperatures'
 
+        if links is None:
+            links = 31
         path = Path(DATA_DIR, 'INP_ROC')
         path.mkdir(parents=True, exist_ok=True)
-
         time_now = datetime.datetime.now()
         try:
             data_dict = dict()
             df = pd.DataFrame()
             header = ['T', '1.7Vi', '1.1Vc5', '1.25Vd', 'mA2_S0', 'mA1_S0', '1.1Vr', '1.25Va', 'mA0_S0', 'Tsam',
                       '1.25Va', 'mA3_S1', '1.1Vr', 'mA4_S1', 'mA5_S1', '1.25Va']
-
-            for i in range(31):
+            for i in links:
                 print(f'Link={i}')
                 data_from_link = self.adcd(link=i, n=n)
                 # for adcd_line in data:
                 data_dict[f'link{i}'] = data_from_link
-                # line = [d[0] for d in data] + [d[9] for d in data]
-                # line =
-                # if i == 0:
-                #     ws.append(['fpga' for _ in range(len(data))] + ['sampa' for _ in range(len(data))])
-                # ws.append([d for d in data])
-            for link, measurements in data_dict.items():
-                adcd_df = pd.DataFrame(measurements, columns=header)  # Преобразуем np.ndarray в DataFrame
-                adcd_df['link'] = link  # Добавляем столбец с названием датчика
-                df = pd.concat([df, adcd_df], ignore_index=True)
-            df.to_excel(Path(path, f'{time_now.strftime("%Y-%m-%d_%H-%M-%S")}_{part}.xlsx'), index=False)
+            if write:
+                for link, measurements in data_dict.items():
+                    adcd_df = pd.DataFrame(measurements, columns=header)  # Преобразуем np.ndarray в DataFrame
+                    adcd_df['link'] = link  # Добавляем столбец с названием датчика
+                    df = pd.concat([df, adcd_df], ignore_index=True)
+                df.to_excel(Path(path, f'{time_now.strftime("%Y-%m-%d_%H-%M-%S")}_{part}.xlsx'), index=False)
         except Exception as e:
             print(e)
         finally:
-            print(f'DONE {time_now.strftime("%Y-%m-%d_%H-%M-%S")}')
-            # with open(f'{path}/{time_now}.csv', 'ax') as f:
-            # wb.save(f'{path}/{str(time_now)}_N.xlsx')
-            # wb.close()
+            if write:
+                print(f'DONE {time_now.strftime("%Y-%m-%d_%H-%M-%S")}')
 
 
 if __name__ == "__main__":
@@ -487,13 +488,13 @@ if __name__ == "__main__":
     try:
         np.set_printoptions(linewidth=1000, threshold=np.inf)
         link = 4
-
+        links = [3,4,5]
         # f.ttok(f'wmsk 0xffffffff')
-        narrow.get_trstat(link=link)
+        narrow.get_trstat_all(links=links)
         # narrow.power_on(link)
 
-        narrow.ini(link=link)
-        narrow.adcd(link=link,n=10)
+        narrow.ini_all(links=links)
+        narrow.adcd_all(links=links, n=1, part='N')
         # narrow.get_tts_tth(link=link)
         # narrow.adcd(link=link, n=3)
         # a = narrow.getff(link=link)
