@@ -2,3 +2,5 @@
 /src/data/
 /.pdm-build/
 /.idea/
+/build/
+/dist/
