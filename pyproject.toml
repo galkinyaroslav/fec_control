@@ -24,6 +24,7 @@ dependencies = [
     "colorama>=0.4.6",
     "zeroconf>=0.145.1",
     "psutil>=7.0.0",
+    "mpld3>=0.5.11",
 ]
 name = "fec-control"
 version = "0.1.0"

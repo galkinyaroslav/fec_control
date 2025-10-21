@@ -1,0 +1,3 @@
+для сбора папок(номеров карт) в которых есть еще папки кроме папки 0pF и копирования папок(номеров карт) в удобное место
+for d in /media/yaroslav/3FB2108503EDE0AE/fec_test_backup/20_08_2025/runs/*; do [ -d "$d" ] && [[ $(basename "$d") =~ ^[0-9]+$ ]] && [ $(find "$d" -mindepth 1 -maxdepth 1 -type d | wc -l) -gt 1 ] && cp -r "$d" /home/yaroslav/ENC/; done
+

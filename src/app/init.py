@@ -399,7 +399,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def rms_pedestal_fc(self, fecard, link: int = 31, data_filter: bool = True):
         runs_number: int = 100
-        self.raw_fc(fecard=fecard, runs_number=runs_number,link=link, data_filter=data_filter)
+        return self.raw_fc(fecard=fecard, runs_number=runs_number,link=link, data_filter=data_filter)
 
     def raw_fc(self, fecard, runs_number: int = 10, link: int = 31, data_filter: bool = True):
         adcd = fecard.adcd(n=3, link=link)

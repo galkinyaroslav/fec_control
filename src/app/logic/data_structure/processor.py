@@ -39,6 +39,11 @@ class BaseDataProcessor(ABC):
             return self._waveform_data.std(axis=(0, 2), ddof=1)
         else:
             return None
+    def get_mean(self) -> np.array:
+        if self._valid_data_structure:
+            return self._waveform_data.mean(axis=(0,2))
+        else:
+            return None
 
     def validate(self) -> bool:
         """Проверяет, соответствуют ли данные условиям"""
